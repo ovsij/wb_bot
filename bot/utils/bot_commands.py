@@ -2,6 +2,8 @@ from aiogram import Bot
 from aiogram.types import BotCommand, BotCommandScopeDefault, BotCommandScopeChat, BotCommandScopeAllPrivateChats
 
 from bot.config import Config
+from bot.database.functions.db_requests import DbRequests
+
 
 
 async def set_commands(
@@ -12,6 +14,22 @@ async def set_commands(
         BotCommand(
             command="my",
             description="🟢 Личный кабинет"
+        ),
+        BotCommand(
+            command="stock",
+            description="📦 Товары и остатки"
+        ),
+        BotCommand(
+            command="search",
+            description="🔍 Проверка товара в поиске"
+        ),
+        BotCommand(
+            command="reports",
+            description="📊 Отчеты"
+        ),
+        BotCommand(
+            command="export",
+            description="📁 Экспорт в таблицы"
         ),
         BotCommand(
             command="tariff",
@@ -27,7 +45,8 @@ async def set_commands(
         ),
     ]
     await bot.set_my_commands(commands=commands, scope=BotCommandScopeAllPrivateChats())
-    for admin in config.bot.admin_ids:
+    db_requests = DbRequests()
+    for admin in db_requests.get_user(is_admin=True):
         try:
             commands.append(
                 BotCommand(

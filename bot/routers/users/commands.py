@@ -46,7 +46,10 @@ async def cmd_tariff(message: Message):
 @user_commands_router.message(Command("news"))
 async def cmd_news(message: Message, db_request: DbRequests):
     news_ids = [n.id for n in db_request.get_news()]
-    text, reply_markup = inline_kb_news(db_request, news_id=news_ids[-1], tg_id=str(message.from_user.id))
+    if news_ids:
+        text, reply_markup = inline_kb_news(db_request, news_id=news_ids[-1], tg_id=str(message.from_user.id))
+    else:
+        text, reply_markup = inline_kb_news(db_request, tg_id=str(message.from_user.id))
     await message.answer(text=text, reply_markup=reply_markup)
     await message.delete()
 
