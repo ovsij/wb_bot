@@ -8,3 +8,7 @@ class Form(StatesGroup):
     addcoupon = State()
     addusercoupon = State()
     addnews = State()
+    reports = State()
+    reports_timedelta = State()
+    search = State()
+    my_products = State()

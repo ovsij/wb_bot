@@ -11,16 +11,16 @@ PROJECT_ROOT = os.path.abspath(os.path.join(
 )
 sys.path.append(PROJECT_ROOT)
 
-
+from bot import bot
 from bot.config import Config, load_config
 from bot.middlewares.db_session import DbSessionMiddleware
-from bot.utils.bot_commands import set_commands
-from bot.utils.bot_description import set_bot_description
+from bot.utils import regular_payment, regular_check_test_period, set_bot_description, set_commands
+from bot.wildberries import update_sellers
 
 
 logger = logging.getLogger(__name__)
 config: Config = load_config('.env')
-bot = Bot(token=config.bot.token, parse_mode='HTML', disable_web_page_preview=True)
+#bot = Bot(token=config.bot.token, parse_mode='HTML', disable_web_page_preview=True)
 
 async def on_startup(dispatcher: Dispatcher):
     config: Config = dispatcher.workflow_data["config"]
@@ -30,6 +30,11 @@ async def on_startup(dispatcher: Dispatcher):
     from bot import routers
 
     routers.register_all_routes(dispatcher, config)
+
+    asyncio.create_task(update_sellers())
+    asyncio.create_task(regular_payment())
+    #asyncio.create_task(regular_check_test_period())
+    
 
 # Запуск бота
 async def main():
@@ -50,6 +55,8 @@ async def main():
         await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
     finally:
         logging.warning("Bot polling is stopped.")
+
+    
 
 #if __name__ == "__main__":
 #    try:

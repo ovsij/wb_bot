@@ -13,8 +13,16 @@ class Bot:
     videoinstruction : str
 
 @dataclass
+class Postgres:
+    user : str
+    password : str
+    host : str
+    database : str
+
+@dataclass
 class Config:
     bot: Bot
+    postgres : Postgres
 
 def load_config(path: str = None):
     env = Env()
@@ -28,5 +36,11 @@ def load_config(path: str = None):
             oferta=env.str("OFERTA"),
             bot_url=env.str("BOT_URL"),
             videoinstruction=env.str("VIDEOINSTRUCTION"),
+        ),
+        postgres=Postgres(
+            user=env.str("DB_USER"),
+            password=env.str("DB_PASSWORD"),
+            host=env.str("DB_HOST"),
+            database=env.str("DB_DATABASE"),
         )
     )

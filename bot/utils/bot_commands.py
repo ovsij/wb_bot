@@ -54,9 +54,9 @@ async def set_commands(
                     description="Меню администратора"
                 )
             )
-            await bot.set_my_commands(commands=commands, scope=BotCommandScopeChat(chat_id=admin))
+            await bot.set_my_commands(commands=commands, scope=BotCommandScopeChat(chat_id=admin.tg_id))
         except:
-            print(admin)
+            print(f'Command not created for: {admin}')
 
 
 """

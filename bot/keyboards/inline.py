@@ -1,10 +1,11 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.formatting import *
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.config import load_config
+from bot.database.enum import *
 from bot.keyboards import InlineConstructor, btn_back
 
 config = load_config('.env')
@@ -254,7 +255,7 @@ def inline_kb_shop_settings(db_request, seller_id : int, tg_id : str):
     text_and_data.append(['🔑 API токен FBS (стандартный)', f'apifbs_{seller_id}'])
     text_and_data.append(['🧑‍💼 Сотрудники', f'add_employee_{seller_id}'])
     text_and_data.append(['🔔 Уведомления', f'notifications_{seller_id}'])
-    text_and_data.append(['❌ Удалить поставщика', f'delapifbo_{seller_id}'])
+    text_and_data.append(['❌ Удалить поставщика', f'delapifbo_{seller_id}_{employee.id}'])
     text_and_data.append(btn_back('settings'))
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
     return text.as_html(), reply_markup
@@ -273,8 +274,9 @@ def inline_kb_stockreserve(db_request, seller_id : int, tg_id : str):
     reply_markup = InlineConstructor.create_kb(text_and_data=[btn_back(f'settings_{seller_id}')])
     return text.as_html(), reply_markup
 
-def inline_kb_apifbo(db_request, seller_id : int):
+def inline_kb_apifbo(db_request, seller_id : int, tg_id : str):
     seller = db_request.get_seller(id=seller_id)
+    employee = db_request.get_employee(seller_id=seller_id, user_id=db_request.get_user(tg_id=tg_id).id)
     text = as_line(Bold('🔑 Управление токеном'),
                    '',
                    f'🥝 {seller.name}',
@@ -284,7 +286,7 @@ def inline_kb_apifbo(db_request, seller_id : int):
     )
     text_and_data = [
         ['Заменить API токен FBO (статистика)', f'changeapifbo_{seller_id}'],
-        ['Удалить API токен FBO (статистика)', f'delapifbo_{seller_id}'],
+        ['Удалить API токен FBO (статистика)', f'delapifbo_{seller_id}_{employee.id}'],
         btn_back(f'settings_{seller_id}')
     ]
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
@@ -312,7 +314,9 @@ def inline_kb_change_apifbo(db_request, seller_id : int):
     reply_markup.add(InlineKeyboardButton(text='🤵 Поддержка', url=config.bot.support_url))
     return text.as_html(), reply_markup.as_markup()
 
-def inline_kb_del_apifbo(db_request, seller_id : int):
+def inline_kb_del_apifbo(db_request, seller_id : int, employee_id : int,  tg_id : str):
+    
+    employee = db_request.get_employee(id=employee_id)
     seller = db_request.get_seller(id=seller_id)
     text = as_line(Bold('🗑 Удаление  '),
                    '',
@@ -324,7 +328,7 @@ def inline_kb_del_apifbo(db_request, seller_id : int):
     )
     text_and_data = [
         btn_back(f'apifbo_{seller_id}'),
-        ['Удалить', f'delapifbo_accept_{seller_id}'],
+        ['Удалить', f'delapifbo_accept_{seller_id}_{employee.id}'],
     ]
     schema = [2]
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
@@ -524,7 +528,7 @@ def inline_kb_payment(sum : int, payment_link : str):
 
 def inline_kb_credit(db_request, tg_id : str):
     user = db_request.get_user(tg_id=tg_id)
-    transactions = db_request.get_transaction(user_id=user.id)
+    transactions = db_request.get_transaction(user_id=user.id, type=False)
     text = as_line(Bold('🧾 Пополнения'),
                    '',
                    sep='\n'
@@ -544,7 +548,7 @@ def inline_kb_credit(db_request, tg_id : str):
 
 def inline_kb_debit(db_request, tg_id : str):
     user = db_request.get_user(tg_id=tg_id)
-    transactions = db_request.get_transaction(user_id=user.id)
+    transactions = db_request.get_transaction(user_id=user.id, type=False)
     text = as_line(Bold('🧾 Списания'),
                    '',
                    sep='\n'
@@ -554,7 +558,7 @@ def inline_kb_debit(db_request, tg_id : str):
     else:
         for t in transactions:
             if not t.type:
-                text += f"· {t.datetime.strftime('%d.%m.%Y %H:%M:%S')} - {t.sum}₽"
+                text += f'Номер:              {t.id}\nДата:                  {t.datetime.strftime("%d.%m.%Y %H:%M")}\nПоставщик:      {t.seller_name}\nТариф:               {t.tariff}\nБаланс:             {t.balance}\nЗачислено:       {t.sum}₽\n\n'
     text_and_data = [
         btn_back('balanсe')
     ]
@@ -650,7 +654,6 @@ def inline_kb_news(db_request, news_id : int = None, tg_id : str = None):
 
     if db_request.get_user(tg_id=tg_id).is_admin:
         text_and_data.append(['Добавить новость', f'addnews_{news_id}'])
-        print(news_ids)
         if news_ids:
             news_id = news_ids[0] if not news_id else news_id
             id = news_ids[news_ids.index(news_id) - 1] if news_id != news_ids[0] and news_id != None else news_ids[0] if news_id != news_ids[0] else news_ids[1] if len(news_ids) > 1 else None
@@ -667,3 +670,816 @@ def inline_kb_addnews(news_id):
     text = 'Введите текст новости.\n\nЧтобы форматировать текст используйте HTML разметку.'
     reply_markup = InlineConstructor.create_kb(text_and_data=[btn_back(f'news_{news_id}')])
     return text, reply_markup
+
+def inline_kb_stocks(db_request, tg_id : str):
+    text = as_line(Bold('ТОВАРЫ И ОСТАТКИ'),
+                   '',
+                   sep='\n'
+    )
+
+    sellers = db_request.get_seller(user_id=db_request.get_user(tg_id=tg_id).id)
+    is_selected = []
+    for seller in sellers:
+        employee = db_request.get_employee(seller_id=seller.id, user_id=db_request.get_user(tg_id=tg_id).id)
+        is_selected.append(employee.is_selected)
+        if employee.is_selected:
+            products = db_request.get_product(seller_id=seller.id)
+            product_warehouse = db_request.get_product_warehouse(seller_id=seller.id)
+            quantity = sum([pw.quantity for pw in product_warehouse])
+            inWayToClient = sum([pw.inWayToClient for pw in product_warehouse])
+            inWayFromClient = sum([pw.inWayFromClient for pw in product_warehouse])
+
+            text += as_line(Bold(seller.name),
+                        f'📦 Остатки всего: {quantity}',
+                        f'🚛 В пути до клиента: {inWayToClient}',
+                        f'🚚 В пути возвраты: {inWayFromClient}',
+                        f'🗂 Артикулы в продаже: {len(products)}',
+                        '',
+                        sep='\n'
+            )
+    
+    text_and_data = [
+        ['📦 Мои товары','myproducts_1'],
+        ['💟 Избранное','favorites_1'],
+        ['🗄 Архив','archive_1'],
+    ]
+    if len(sellers) > 1:
+        btn = 'По всем поставщикам' if all(is_selected) else f'Выбрано поставщиков: {len([i for i in is_selected if i])}'
+        text_and_data.insert(0, [btn,'selectseller_stock'])
+    
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
+    return text.as_html(), reply_markup
+
+def inline_kb_selectseller(db_request, tg_id : str, code : str = 'all', back : str = None):
+    sellers = db_request.get_seller(user_id=db_request.get_user(tg_id=tg_id).id)
+    text = as_line(Bold('Выбор поставщика'),
+                   '',
+                   'Выберите поставщиков, по которым хотите построить отчёт:',
+                   sep='\n'
+    )
+    text_and_data = []
+    is_selected = []
+    for seller in sellers:
+        employee = db_request.get_employee(seller_id=seller.id, user_id=db_request.get_user(tg_id=tg_id).id)
+        is_selected.append(employee.is_selected)
+        btn = f'👉 {seller.name}' if employee.is_selected else seller.name
+        text_and_data.append([btn, f'selectseller_{back}_{seller.id}'])
+    
+    btn = [f'👉 По всем поставщикам', 'none'] if all(is_selected) and code == 'all' else ['По всем поставщикам', f'selectseller_{back}_all']
+    text_and_data.append(btn)
+
+    if all(is_selected) and code == 'all':
+        text_and_data = [[tad[0].strip('👉 '), tad[1]] for tad in text_and_data[:-1]] + [text_and_data[-1]]
+    text_and_data.append(btn_back(back))
+
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
+    return text.as_html(), reply_markup
+
+def inline_kb_stock_myproducts(db_request, tg_id : str, page : int = 1, filter : str = None):
+    title = 'МОИ ТОВАРЫ' if filter == 'myproducts' else 'ИЗБРАННОЕ' if filter == 'favorites' else 'АРХИВ'
+    text = as_line(Bold(title),
+                   sep='\n'
+    )
+    user = db_request.get_user(tg_id=tg_id)
+    products_dcts = []
+    total_revenue = {}
+    seller_ids = [s.id for s in db_request.get_seller(user_id=user.id) if db_request.get_employee(seller_id=s.id, user_id=user.id).is_selected]
+    for seller_id in seller_ids:
+        products = db_request.get_product(seller_id=seller_id)
+        for product in products:
+            user_seller = db_request.get_employee(user_id=user.id, seller_id=product.seller.id)
+            product_warehouse = db_request.get_product_warehouse(product_id=product.id)
+            products_dct = {}
+            products_dct['product'] = product
+            products_dct['seller_id'] = seller_id
+            products_dct["rating"] = product.rating
+            products_dct["reviews"] = product.reviews
+            products_dct['inWayToClient'] = sum([p.inWayToClient for p in product_warehouse])
+            products_dct['inWayFromClient'] = sum([p.inWayFromClient for p in product_warehouse])
+            products_dct['stock'] = sum([p.quantity for p in product_warehouse])
+            products_dct['sales_list'] = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+            products_dct['sales'] = len(products_dct['sales_list']) - products_dct['inWayFromClient']
+            gNumbers = [s['gNumber'] for s in products_dct['sales_list']]
+            products_dct['orders_list'] = [o for o in db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}") if o['gNumber'] in gNumbers]
+            products_dct['sales_revenue'] = sum([s['priceWithDisc'] for s in products_dct['sales_list']])
+            try:
+                total_revenue[seller_id] += products_dct['sales_revenue']
+            except:
+                total_revenue[seller_id] = products_dct['sales_revenue']
+            try:
+                products_dct['load'] = int((len(products_dct["orders_list"])/91) * user_seller.stock_reserve - products_dct["stock"])
+            except:
+                products_dct['load'] = 0
+            try:
+                products_dct['buyout'] = int((products_dct["sales"]/len(products_dct["orders_list"])) * 100)
+            except:
+                products_dct['buyout'] = 0
+            products_dct['favorites'] = True if product.id in [p.id for p in db_request.get_product(in_favorites=user_seller.id)] else False            
+            products_dct['archive'] = True if product.id in [p.id for p in db_request.get_product(in_archive=user_seller.id)] else False
+            if filter == 'favorites':
+                if products_dct['favorites']:
+                    products_dcts.append(products_dct)
+            elif filter == 'archive':
+                if products_dct['archive']:
+                    products_dcts.append(products_dct)
+            else:
+                products_dcts.append(products_dct)
+
+    cumulative_total = {}
+    products_dcts_revenue_sorted = sorted(products_dcts, key=lambda x:x['sales_revenue'], reverse=True)
+    for seller_id in seller_ids:
+        for product in products_dcts_revenue_sorted:
+            if product['seller_id'] == seller_id:
+                try:
+                    product['abc'] = product['sales_revenue'] / total_revenue[product['seller_id']] * 100
+                except:
+                    product['abc'] = 0
+                try:
+                    cumulative_total[product['seller_id']] += product['abc']
+                except:
+                    cumulative_total[product['seller_id']] = product['abc']
+                product['cumulative_total'] = cumulative_total[product['seller_id']]
+                if cumulative_total[product['seller_id']] <= 80:
+                    product['abc_key'] = 'A'
+                elif 80 < cumulative_total[product['seller_id']] <= 95:
+                    product['abc_key'] = 'B'
+                else:
+                    product['abc_key'] = 'C'
+    
+    key = str(user.stock_sorting).replace('StockSorting.', '').replace('ASC', '').replace('DESC', '')
+    
+    if 'ASC' in str(user.stock_sorting):
+        products_dcts_sorted = sorted(products_dcts_revenue_sorted, key=lambda x:x[key])
+    else:
+        products_dcts_sorted = sorted(products_dcts_revenue_sorted, key=lambda x:x[key], reverse=True)
+
+    addfavorites_code = 'addfav'
+    delfavorites_code = 'delfav'
+    for product in products_dcts_sorted[page * 10 - 10:page * 10]:    
+        
+        url = f"https://www.wildberries.ru/catalog/{product['product'].nmId}/detail.aspx"
+        text += as_line('')
+        text += as_line(f'🆔 Артикул WB: ',
+                        TextLink(product["product"].nmId, url=url),
+        )
+        text += as_line(f'📁 {product["product"].subject}',
+        )
+        text += as_line(f'🏷 {product["product"].brand} / ',
+                        TextLink(product["product"].supplierArticle, url=url)
+        )
+        try:
+            days = int(product["stock"]/(len(product["orders_list"])/91))
+        except:
+            days = 0
+        fill_stock_str = f'🚗 Пополните склад на {product["load"]} шт.' if product["load"] > 0 else ''
+        text += as_line(f'⭐️ Рейтинг: {product["rating"]}',
+                        f'💬 Отзывы: {product["reviews"]}',
+                        f'💎 Выкуп за 3 мес: {product["buyout"]}% ({product["sales"]}/{len(product["orders_list"])})',
+                        f'🟧 ABC-анализ: {product["abc_key"]} ({round(product["abc"], 2)}%)',
+                        f'🚛 В пути до клиента: {product["inWayToClient"]}',
+                        f'🚚 В пути возвраты: {product["inWayFromClient"]}',
+                        f'📦 На складе: {product["stock"]} шт.',
+                        f'🗓 Хватит на {days} дн.',
+                        sep='\n'
+        )
+        if fill_stock_str:
+            text += as_line(fill_stock_str)
+
+        if product['favorites']:
+            text += as_line(f'💟 ', TextLink('[– Убрать из избранного]', url=f'{config.bot.bot_url}?start=favorites_{product["product"].id}')
+            )
+            delfavorites_code += '_' + str(product["product"].id)
+        else:
+            text += as_line(f'💟 ', TextLink('[+ Добавить в избранное]', url=f'{config.bot.bot_url}?start=favorites_{product["product"].id}')
+            )
+            addfavorites_code += '_' + str(product["product"].id)
+        if product['archive']:
+            text += as_line(f'🗄 ', TextLink('[- Удалить из архива]', url=f'{config.bot.bot_url}?start=archive_{product["product"].id}')
+            )
+        else:
+            text += as_line(f'🗄 ', TextLink('[+ Добавить в архив]', url=f'{config.bot.bot_url}?start=archive_{product["product"].id}')
+            )
+    
+        
+    if len(addfavorites_code.split('_')) == 1:
+        addfavorites_text = '💔 Удалить всё из избранного'
+        favorites_code = delfavorites_code
+    else:
+        addfavorites_text = '💟 Добавить всё в избранное'
+        favorites_code = addfavorites_code
+    
+    text_and_data = [
+        ['Продажи 🔺', f'{filter}_salesASC_1'],
+        ['Продажи 🔻', f'{filter}_salesDESC_1'],
+        ['Пополнить 🔺', f'{filter}_loadASC_1'],
+        ['Пополнить 🔻', f'{filter}_loadDESC_1'],
+        ['Остатки 🔺', f'{filter}_stockASC_1'],
+        ['Остатки 🔻', f'{filter}_stockDESC_1'],
+        ['Рейтинг 🔺', f'{filter}_ratingASC_1'],
+        ['Рейтинг 🔻', f'{filter}_ratingDESC_1'],
+        ['Отзывы 🔺', f'{filter}_reviewsASC_1'],
+        ['Отзывы 🔻', f'{filter}_reviewsDESC_1'],
+        ['Выкуп 🔺', f'{filter}_buyoutASC_1'],
+        ['Выкуп 🔻', f'{filter}_buyoutDESC_1'],
+        ['ABC-анализ 🔺', f'{filter}_abcASC_1'],
+        ['ABC-анализ 🔻', f'{filter}_abcDESC_1'],
+        [addfavorites_text, favorites_code],
+        btn_back('stock'),
+        ['🔍 Поиск', 'none'],
+    ]
+    for i in range(len(text_and_data)):
+        if str(user.stock_sorting).strip('StockSorting.') in text_and_data[i][1]:
+            text_and_data[i][0] = '🟢 ' + text_and_data[i][0]
+    schema = [2, 2, 2, 2, 2, 2, 2, 1, 2]
+
+    if filter in ['favorites', 'archive']:
+        del text_and_data[-3]
+        del schema[-2]
+
+    for i in range(len(text_and_data)):
+        if str(user.reports_groupby).replace('ReportsGroupBy.', '').lower() in text_and_data[i][1]:
+            text_and_data[i][0] = '🟢 ' + text_and_data[i][0]
+            text_and_data[i][1] = 'none' 
+    if page == 1:
+        if len(products_dcts_sorted) > 10:
+            text_and_data.insert(0, ['След ➡️', f'{filter}_{page + 1}'])
+            schema.insert(0, 1)
+    elif page == (len(products_dcts_sorted) // 10) + 1 or page == len(products_dcts_sorted) // 10:
+        text_and_data.insert(0, ['⬅️ Пред', f'{filter}_{page - 1}'])
+        schema.insert(0, 1)
+    else:
+        text_and_data.insert(0, ['След ➡️', f'{filter}_{page + 1}'])
+        text_and_data.insert(0, ['⬅️ Пред', f'{filter}_{page - 1}'])
+        schema.insert(0, 2)
+
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
+    return text.as_html(), reply_markup
+
+def inline_kb_reports(db_request, tg_id : str):
+    text = as_line(Bold('СВОДКА'),
+                   '',
+                   sep='\n'
+    )
+
+    sellers = db_request.get_seller(user_id=db_request.get_user(tg_id=tg_id).id)
+    is_selected = []
+    for seller in sellers:
+        employee = db_request.get_employee(seller_id=seller.id, user_id=db_request.get_user(tg_id=tg_id).id)
+        is_selected.append(employee.is_selected)
+        if employee.is_selected:
+            today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=seller.id, period='today', select_for='reports')]
+            yesterday_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=seller.id, period='yesterday', select_for='reports')]
+            week_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=seller.id, period='week', select_for='reports')]
+            month_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=seller.id, period='month', select_for='reports')]
+
+            today_sales = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period='today', type='S', select_for='reports')]
+            yesterday_sales = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period='yesterday', type='S', select_for='reports')]
+            week_sales = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period='week', type='S', select_for='reports')]
+            month_sales = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period='month', type='S', select_for='reports')]
+
+            today_returns = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period='today', type='R', select_for='reports')]
+            yesterday_returns = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period='yesterday', type='R', select_for='reports')]
+            week_returns = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period='week', type='R', select_for='reports')]
+            month_returns = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period='month', type='R', select_for='reports')]
+            text += as_line(f'🥝 {seller.name}',
+                            '',
+                            Bold('СЕГОДНЯ'),
+                            f"🛒 Заказы:        {len(today_orders)} на {'{0:,}'.format(int(sum(today_orders))).replace(',', ' ')}₽",
+                            f"💳 Выкупы:       {len(today_sales)} на {'{0:,}'.format(int(sum(today_sales))).replace(',', ' ')}₽",
+                            f'↩️ Возвраты:    {len(today_returns)}',
+                            '',
+                            Bold('ВЧЕРА'),
+                            f"🛒 Заказы:        {len(yesterday_orders)} на {'{0:,}'.format(int(sum(yesterday_orders))).replace(',', ' ')}₽",
+                            f"💳 Выкупы:       {len(yesterday_sales)} на {'{0:,}'.format(int(sum(yesterday_sales))).replace(',', ' ')}₽",
+                            f'↩️ Возвраты:    {len(yesterday_returns)}',
+                            '',
+                            Bold('ЗА 7 ДНЕЙ'),
+                            f"🛒 Заказы:        {len(week_orders)} на {'{0:,}'.format(int(sum(week_orders))).replace(',', ' ')}₽",
+                            f"💳 Выкупы:       {len(week_sales)} на {'{0:,}'.format(int(sum(week_sales))).replace(',', ' ')}₽",
+                            f'↩️ Возвраты:    {len(week_returns)}',
+                            '',
+                            Bold('ЗА 30 ДНЕЙ'),
+                            f"🛒 Заказы:        {len(month_orders)} на {'{0:,}'.format(int(sum(month_orders))).replace(',', ' ')}₽",
+                            f"💳 Выкупы:       {len(month_sales)} на {'{0:,}'.format(int(sum(month_sales))).replace(',', ' ')}₽",
+                            f'↩️ Возвраты:    {len(month_returns)}',
+                            '',
+                            sep='\n')
+    text += as_line('ℹ️ Фактические данные могут отличаться.')
+    text_and_data = [
+        ['Сегодня','reports_today_1'],
+        ['Вчера','reports_yesterday_1'],
+        ['7 дней','reports_week_1'],
+        ['30 дней','reports_month_1'],
+        ['Другой период','reports_timedelta'],
+        ['🛒 Заказы','reportorders_1'],
+        ['💳 Выкупы','repsalesS_1'],
+        ['↩️ Возвраты','repsalesR_1'],
+        ['⛔ Штрафы','repsalesD_1']
+    ]
+    schema = [2, 2, 1, 2, 2]
+    if len(sellers) > 1:
+        btn = 'По всем поставщикам' if all(is_selected) else f'Выбрано поставщиков: {len([i for i in is_selected if i])}'
+        text_and_data.insert(0, [btn, 'selectseller_reports'])
+        schema.insert(0,  1)
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
+    return text.as_html(), reply_markup
+
+def inline_kb_reports_byperiod(db_request, state, tg_id : str, period : str, page : int = 1, search : str = None):
+    text_period = 'СЕГОДНЯ' if period == 'today' else 'ВЧЕРА' if period == 'yesterday' else '7 ДНЕЙ' if period == 'week' else '30 ДНЕЙ' if period == 'month' else period
+    text = as_line(Bold(f'СТАТИСТИКА ЗА {text_period}'),
+                   '',
+                   sep='\n'
+    )
+    if search:
+        text += as_line(Bold('Поиск: '), f'🔍 "{search}"\n', sep=' ')
+    user = db_request.get_user(tg_id=tg_id)
+    sellers = db_request.get_seller(user_id=user.id)
+    is_selected = []
+    today_orders = []
+    today_sales = []
+    today_returns = []
+    text_for_sorting = {}
+    if user.reports_groupby == ReportsGroupBy.WITHOUTGROUP:
+        for seller in sellers:
+            employee = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+            is_selected.append(employee.is_selected)
+            if employee.is_selected:
+                if search:
+                    today_orders += [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports') if str(o['nmId']) == search or str(o['supplierArticle']) == search or str(o['brand']) == search or str(o['subject']) == search]
+                    today_sales += [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                    today_returns += [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                else:
+                    today_orders += [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports')]
+                    today_sales += [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports')]
+                    today_returns += [s['priceWithDisc'] for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports')]
+        
+        text += as_line(f"🛒 Заказы:        {len(today_orders)} на {'{0:,}'.format(int(sum(today_orders))).replace(',', ' ')}₽",
+                        f"💳 Выкупы:       {len(today_sales)} на {'{0:,}'.format(int(sum(today_sales))).replace(',', ' ')}₽",
+                        f'↩️ Возвраты:    {len(today_returns)}',
+                        sep='\n'
+        )
+    elif user.reports_groupby == ReportsGroupBy.SUBJECT:
+        for seller in sellers:
+            employee = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+            is_selected.append(employee.is_selected)
+            if employee.is_selected:
+                if search:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports') if str(o['nmId']) == search or str(o['supplierArticle']) == search or str(o['brand']) == search or str(o['subject']) == search]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                else:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports')]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports')]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports')]
+                
+                for subject in list(set([o['subject'] for o in orders] + [s['subject'] for s in sales] + [r['subject'] for r in returns])):
+                    subject_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['subject'] == subject]
+                    subject_sales = [s['priceWithDisc'] for s in sales if s['subject'] == subject]
+                    subject_returns = [r['priceWithDisc'] for r in returns if r['subject'] == subject]
+                    text_for_sorting[len(subject_orders)] = as_line(Bold(subject),
+                                    f"🛒 Заказы:        {len(subject_orders)} на {'{0:,}'.format(int(sum(subject_orders))).replace(',', ' ')}₽",
+                                    f"💳 Выкупы:       {len(subject_sales)} на {'{0:,}'.format(int(sum(subject_sales))).replace(',', ' ')}₽",
+                                    f'↩️ Возвраты:    {len(subject_returns)}',
+                                    '',
+                                    sep='\n', 
+                                    )
+    elif user.reports_groupby == ReportsGroupBy.ARTICLES:
+        for seller in sellers:
+            employee = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+            is_selected.append(employee.is_selected)
+            if employee.is_selected:
+                
+                if search:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports') if str(o['nmId']) == search or str(o['supplierArticle']) == search or str(o['brand']) == search or str(o['subject']) == search]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                else:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports')]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports')]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports')]
+                
+
+                for article in list(set([o['nmId'] for o in orders] + [s['nmId'] for s in sales] + [r['nmId'] for r in returns])):
+                    article_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['nmId'] == article]
+                    article_sales = [s['priceWithDisc'] for s in sales if s['nmId'] == article]
+                    article_returns = [r['priceWithDisc'] for r in returns if r['nmId'] == article]
+                    text_for_sorting[len(article_orders)] = as_line(Underline(TextLink(article, url=f'https://www.wildberries.ru/catalog/{article}/detail.aspx')),
+                                    f"🛒 Заказы:        {len(article_orders)} на {'{0:,}'.format(int(sum(article_orders))).replace(',', ' ')}₽",
+                                    f"💳 Выкупы:       {len(article_sales)} на {'{0:,}'.format(int(sum(article_sales))).replace(',', ' ')}₽",
+                                    f'↩️ Возвраты:    {len(article_returns)}',
+                                    f'📁 {db_request.get_product(nmId=article).subject}',
+                                    as_line(f"🏷 {seller.name} / ", Underline(TextLink(db_request.get_product(nmId=article).supplierArticle, url=f'https://www.wildberries.ru/catalog/{article}/detail.aspx'))),
+                                    sep='\n', 
+                                    )
+    
+    elif user.reports_groupby == ReportsGroupBy.BRANDS:
+        
+        for seller in sellers:
+            employee = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+            is_selected.append(employee.is_selected)
+            if employee.is_selected:
+                if search:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports') if str(o['nmId']) == search or str(o['supplierArticle']) == search or str(o['brand']) == search or str(o['subject']) == search]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                else:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports')]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports')]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports')]
+                
+
+                for brand in list(set([o['brand'] for o in orders] + [s['brand'] for s in sales] + [r['brand'] for r in returns])):
+                    brand_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['brand'] == brand]
+                    brand_sales = [s['priceWithDisc'] for s in sales if s['brand'] == brand]
+                    brand_returns = [r['priceWithDisc'] for r in returns if r['brand'] == brand]
+                    text_for_sorting[len(brand_orders)] = as_line(Bold(brand),
+                                                                    f"🛒 Заказы:        {len(brand_orders)} на {'{0:,}'.format(int(sum(brand_orders))).replace(',', ' ')}₽",
+                                                                    f"💳 Выкупы:       {len(brand_sales)} на {'{0:,}'.format(int(sum(brand_sales))).replace(',', ' ')}₽",
+                                                                    f'↩️ Возвраты:    {len(brand_returns)}',
+                                                                    '',
+                                                                    sep='\n'
+                    )
+
+    elif user.reports_groupby == ReportsGroupBy.REGIONS:
+        regions = {}
+        for seller in sellers:
+            employee = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+            is_selected.append(employee.is_selected)
+            if employee.is_selected:
+                if search:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports') if str(o['nmId']) == search or str(o['supplierArticle']) == search or str(o['brand']) == search or str(o['subject']) == search]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                else:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports')]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports')]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports')]
+                
+                for region in list(set([o['oblast'] for o in orders] + [s['regionName'] for s in sales] + [r['regionName'] for r in returns])):
+                    region_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['oblast'] == region]
+                    region_sales = [s['priceWithDisc'] for s in sales if s['regionName'] == region]
+                    region_returns = [r['priceWithDisc'] for r in returns if r['regionName'] == region]
+                    try:
+                        regions[region]
+                        regions[region]['len_orders'] += len(region_orders)
+                        regions[region]['sum_orders'] += sum(region_orders)
+                        regions[region]['len_sales'] += len(region_sales)
+                        regions[region]['sum_sales'] += sum(region_sales)
+                        regions[region]['sum_sales'] += len(region_returns)
+                    except:
+                        regions[region] = {'len_orders' : len(region_orders), 'sum_orders' : sum(region_orders), 'len_sales' : len(region_sales), 'sum_sales' : sum(region_sales), 'len_returns' : len(region_returns)}
+        for region, values in regions.items():
+            text_for_sorting[values['len_orders']] = as_line(Bold(region),
+                                                            f"🛒 Заказы:        {values['len_orders']} на {'{0:,}'.format(int(values['sum_orders'])).replace(',', ' ')}₽",
+                                                            f"💳 Выкупы:       {values['len_sales']} на {'{0:,}'.format(int(values['sum_sales'])).replace(',', ' ')}₽",
+                                                            f"↩️ Возвраты:    {values['len_returns']}",
+                                                            '',
+                                                            sep='\n'
+            )
+
+    elif user.reports_groupby == ReportsGroupBy.CATEGORIES:
+        for seller in sellers:
+            employee = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+            is_selected.append(employee.is_selected)
+            if employee.is_selected:
+                if search:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports') if str(o['nmId']) == search or str(o['supplierArticle']) == search or str(o['brand']) == search or str(o['subject']) == search]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports') if str(s['nmId']) == search or str(s['supplierArticle']) == search or str(s['brand']) == search or str(s['subject']) == search]
+                else:
+                    orders = [o for o in db_request.get_order(seller_id=seller.id, period=period, select_for='reports')]
+                    sales = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='S', select_for='reports')]
+                    returns = [s for s in db_request.get_sale(seller_id=seller.id, period=period, type='R', select_for='reports')]
+                
+                for category in list(set([o['category'] for o in orders] + [s['category'] for s in sales] + [r['category'] for r in returns])):
+                    category_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['category'] == category]
+                    category_sales = [s['priceWithDisc'] for s in sales if s['category'] == category]
+                    category_returns = [r['priceWithDisc'] for r in returns if r['category'] == category]
+                    text_for_sorting[len(category_orders)] = as_line(Bold(category),
+                                                                    f"🛒 Заказы:        {len(category_orders)} на {'{0:,}'.format(int(sum(category_orders))).replace(',', ' ')}₽",
+                                                                    f"💳 Выкупы:       {len(category_sales)} на {'{0:,}'.format(int(sum(category_sales))).replace(',', ' ')}₽",
+                                                                    f'↩️ Возвраты:    {len(category_returns)}',
+                                                                    '',
+                                                                    sep='\n'
+                    )
+                                                                    
+    sorted_text_list = sorted(text_for_sorting.items(), reverse=True)
+    for _, value in sorted_text_list[page * 10 - 10:page * 10]:
+        text += value
+
+    search_btn = ['❌ Поиск отмена', f'reportsdeny_{period}_1'] if search else ['🔍 Поиск', f'search_{period}_report']
+
+    text_and_data = [
+        ['Предметы', f'reports_subject_{period}_1'],
+        ['Артикулы', f'reports_articles_{period}_1'],
+        ['Бренды', f'reports_brands_{period}_1'],
+        ['Регионы', f'reports_regions_{period}_1'],
+        ['Категории', f'reports_categories_{period}_1'],
+        ['Без группировки', f'reports_withoutgroup_{period}_1'],
+        btn_back('reports'),
+        search_btn,
+    ]
+    schema = [2, 2, 2, 2]
+    for i in range(len(text_and_data)):
+        if str(user.reports_groupby).replace('ReportsGroupBy.', '').lower() in text_and_data[i][1]:
+            text_and_data[i][0] = '🟢 ' + text_and_data[i][0]
+            text_and_data[i][1] = 'none' 
+    if page == 1:
+        if len(sorted_text_list) > 10:
+            text_and_data.insert(0, ['След ➡️', f'reports_{period}_{page + 1}'])
+            schema.insert(0, 1)
+    elif page == (len(sorted_text_list) // 10) + 1 or page == len(sorted_text_list) // 10:
+        text_and_data.insert(0, ['⬅️ Пред', f'reports_{period}_{page - 1}'])
+        schema.insert(0, 1)
+    else:
+        text_and_data.insert(0, ['След ➡️', f'reports_{period}_{page + 1}'])
+        text_and_data.insert(0, ['⬅️ Пред', f'reports_{period}_{page - 1}'])
+        schema.insert(0, 2)
+    
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
+    return text.as_html(), reply_markup
+
+def inline_kb_reports_timedelta():
+    text = as_line('📝 Введите дату или диапазон дат в этом сообщении:',
+                   '\n\n',
+                   as_line('Пример 1: ', Code('02.10.2023'), sep=' '),
+                   '',
+                   as_line('Пример 2: ', Code('18.09.2023 - 25.09.2023', sep=' ')),
+                   sep='')
+    text_and_data = [['⬅️ Отмена', 'delete_msg']]
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
+    return text.as_html(), reply_markup
+
+def inline_kb_search():
+    text = as_line("🔍 Искать можно по артикулу WB, артикулу поставщика,  бренду, названию предмета или региону.",
+                   "",
+                   "Введите поисковый запрос в этом сообщении: 👇🏻",
+                   sep="\n")
+    text_and_data = [['⬅️ Отмена', 'delete_msg']]
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
+    return text.as_html(), reply_markup
+
+def inline_kb_orders(db_request, tg_id : str = None, page : int = None, search : str = None):
+    user = db_request.get_user(tg_id=tg_id)
+    text = as_line(Bold('ЗАКАЗЫ'))
+    if search:
+        text += as_line(Bold('Поиск: '), f'🔍 "{search}"\n', sep=' ')
+    orders = db_request.get_order(tg_id=tg_id)
+    
+    if user.reports_groupby_period == ReportsGroupByPeriod.WITHOUTGROUP:
+        grouped_orders = []
+        for order in orders:
+            if search:
+                if str(order['nmId']) != search \
+                    and str(order['supplierArticle']) != search \
+                    and str(order['brand']) != search \
+                    and str(order['subject']) != search:
+                    continue
+            grouped_orders.append(as_line(order['date'].strftime('%d.%m.%Y %H:%M'), 
+                            '\n',
+                            Bold(f"🛒 {int(order['totalPrice'] * (1 - order['discountPercent'] / 100))}₽"),
+                            '\n',
+                            f"🆔 {order['srid']}", 
+                            '\n',
+                            as_line(f"🆔 Артикул WB: ", TextLink(order['nmId'], url=f"https://www.wildberries.ru/catalog/{order['nmId']}/detail.aspx"), sep=''), 
+                            f"📁 {order['subject']}",
+                            '\n',
+                            as_line(f"🏷 {order['brand']} / ", TextLink(order['supplierArticle'], url=f"https://www.wildberries.ru/catalog/{order['nmId']}/detail.aspx"), sep=''),
+                            f"🌐 {order['oblast']}",
+                            '\n',
+                            f"📦 {order['warehouseName']}",
+                            '\n'
+                            ))
+        if len(grouped_orders) == 0:
+            text += as_line('Ничего не найдено!')
+        for row in grouped_orders[page * 10 - 10: page * 10]:
+            text += row
+            
+    
+    else:
+        grouped_orders = {}
+        for order in orders:
+            if search:
+                if str(order['nmId']) != search \
+                    and str(order['supplierArticle']) != search \
+                    and str(order['brand']) != search \
+                    and str(order['subject']) != search:
+                    continue
+            if user.reports_groupby_period == ReportsGroupByPeriod.DAYS:
+                date = order['date'].strftime('%d.%m.%Y')
+            elif user.reports_groupby_period == ReportsGroupByPeriod.WEEKS:
+                date = f"Неделя {order['date'].isocalendar().week} {order['date'].year}"
+            elif user.reports_groupby_period == ReportsGroupByPeriod.MONTHS:
+                date = order['date'].strftime('%m.%Y')
+            if date in grouped_orders:
+                if order['nmId'] in grouped_orders[date]:
+                    grouped_orders[date][order['nmId']] += [order]
+                else:
+                    grouped_orders[date][order['nmId']] = [order]
+            else:
+                grouped_orders[date] = {}
+                grouped_orders[date][order['nmId']] = [order]
+        counter = 1
+        for key, value in grouped_orders.items():
+            for dkey, dvalue in value.items():
+                if counter <= page * 10 and counter >= page * 10 - 10:
+                    price = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in dvalue]
+                    text += as_line(Italic(key),
+                                    '\n',
+                                    Bold(f"🛒 Всего: {len(dvalue)} на {int(sum(price))}₽"),
+                                    '\n',
+                                    as_line(f"🆔 Артикул WB: ", Underline(TextLink(dkey, url=f"https://www.wildberries.ru/catalog/{dkey}/detail.aspx")), sep=''),
+                                    f"📁 {dvalue[0]['subject']}",
+                                    '\n',
+                                    as_line(f"🏷 {dvalue[0]['brand']} / ", Underline(TextLink(dvalue[0]['supplierArticle'], url=f"https://www.wildberries.ru/catalog/{dkey}/detail.aspx")), sep=''),
+                                    f"💰 Цена: {int(sum(price)/len(price))}₽ (средняя)", 
+                                    '\n',
+                                    )
+                counter += 1
+
+        if len(grouped_orders) == 0:
+            text += as_line('Ничего не найдено!')
+
+    search_btn = ['❌ Поиск отмена', 'reportorders_deny_1'] if search else ['🔍 Поиск', 'search_orders']
+    search_code = f'{search.replace(" ", "-20")}_' if search else ''
+    text_and_data = [
+        ['По дням', f'reportorders_{search_code}days_1'],
+        ['По неделям', f'reportorders_{search_code}weeks_1'],
+        ['По месяцам', f'reportorders_{search_code}months_1'],
+        ['Без группировки', f'reportorders_{search_code}withoutgroup_1'],
+        btn_back('reports'),
+        search_btn,
+    ]
+    schema = [2,2,2]
+
+    if page == 1:
+        if len(grouped_orders) > 10:
+            text_and_data.insert(0, ['След ➡️', f'reportorders_{search_code}{page + 1}'])
+            schema.insert(0, 1)
+    elif page == (len(grouped_orders) // 10) + 1 or page == len(grouped_orders) // 10:
+        text_and_data.insert(0, ['⬅️ Пред', f'reportorders_{search_code}{page - 1}'])
+        schema.insert(0, 1)
+    else:
+        text_and_data.insert(0, ['След ➡️', f'reportorders_{search_code}{page + 1}'])
+        text_and_data.insert(0, ['⬅️ Пред', f'reportorders_{search_code}{page - 1}'])
+        schema.insert(0, 2)
+
+    for i in range(len(text_and_data)):
+        if str(user.reports_groupby_period).replace('ReportsGroupByPeriod.', '').lower() in text_and_data[i][1]:
+            text_and_data[i][0] = '🟢 ' + text_and_data[i][0]
+            text_and_data[i][1] = 'none' 
+
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
+    return text.as_html(), reply_markup
+
+def inline_kb_sales(db_request, tg_id : str = None, page : int = None, search : str = None, type : str = None):
+    user = db_request.get_user(tg_id=tg_id)
+    text = as_line(Bold('ВЫКУПЫ')) if type == 'S' else as_line(Bold('ВОЗВРАТЫ')) if type == 'R' else as_line(Bold('ШТРАФЫ'))
+    if search:
+        text += as_line(Bold('Поиск: '), f'🔍 "{search}"\n', sep=' ')
+    sales = db_request.get_sale(tg_id=tg_id, type=type)
+    
+    if user.reports_groupby_period == ReportsGroupByPeriod.WITHOUTGROUP:
+        grouped_sales = []
+        for sale in sales:
+            if search:
+                if str(sale['nmId']) != search \
+                    and str(sale['supplierArticle']) != search \
+                    and str(sale['brand']) != search \
+                    and str(sale['subject']) != search:
+                    continue
+            grouped_sales.append(as_line(sale['date'].strftime('%d.%m.%Y %H:%M'), 
+                            '\n',
+                            Bold(f"🛒 {int(sale['priceWithDisc'])}₽"),
+                            '\n',
+                            f"🆔 {sale['srid']}", 
+                            '\n',
+                            as_line(f"🆔 Артикул WB: ", TextLink(sale['nmId'], url=f"https://www.wildberries.ru/catalog/{sale['nmId']}/detail.aspx"), sep=''), 
+                            f"📁 {sale['subject']}",
+                            '\n',
+                            as_line(f"🏷 {sale['brand']} / ", TextLink(sale['supplierArticle'], url=f"https://www.wildberries.ru/catalog/{sale['nmId']}/detail.aspx"), sep=''),
+                            f"🌐 {sale['oblast']}",
+                            '\n',
+                            f"📦 {sale['warehouseName']}",
+                            '\n'
+                            ))
+        if len(grouped_sales) == 0:
+            text += as_line('Ничего не найдено!')
+        for row in grouped_sales[page * 10 - 10: page * 10]:
+            text += row
+    
+    else:
+        grouped_sales = {}
+        for sale in sales:
+            if search:
+                if str(sale['nmId']) != search \
+                    and str(sale['supplierArticle']) != search \
+                    and str(sale['brand']) != search \
+                    and str(sale['subject']) != search:
+                    continue
+            if user.reports_groupby_period == ReportsGroupByPeriod.DAYS:
+                date = sale['date'].strftime('%d.%m.%Y')
+            elif user.reports_groupby_period == ReportsGroupByPeriod.WEEKS:
+                date = f"Неделя {sale['date'].isocalendar().week} {sale['date'].year}"
+            elif user.reports_groupby_period == ReportsGroupByPeriod.MONTHS:
+                date = sale['date'].strftime('%m.%Y')
+            if date in grouped_sales:
+                if sale['nmId'] in grouped_sales[date]:
+                    grouped_sales[date][sale['nmId']] += [sale]
+                else:
+                    grouped_sales[date][sale['nmId']] = [sale]
+            else:
+                grouped_sales[date] = {}
+                grouped_sales[date][sale['nmId']] = [sale]
+        counter = 1
+        for key, value in grouped_sales.items():
+            for dkey, dvalue in value.items():
+                if counter <= page * 10 and counter >= page * 10 - 10:
+                    price = [s['priceWithDisc'] for s in dvalue]
+                    text += as_line(Italic(key),
+                                    '\n',
+                                    Bold(f"🛒 Всего: {len(dvalue)} на {int(sum(price))}₽"),
+                                    '\n',
+                                    as_line(f"🆔 Артикул WB: ", Underline(TextLink(dkey, url=f"https://www.wildberries.ru/catalog/{dkey}/detail.aspx")), sep=''),
+                                    f"📁 {dvalue[0]['subject']}",
+                                    '\n',
+                                    as_line(f"🏷 {dvalue[0]['brand']} / ", Underline(TextLink(dvalue[0]['supplierArticle'], url=f"https://www.wildberries.ru/catalog/{dkey}/detail.aspx")), sep=''),
+                                    f"💰 Цена: {int(sum(price)/len(price))}₽ (средняя)", 
+                                    '\n',
+                                    )
+                counter += 1
+
+        if len(grouped_sales) == 0:
+            text += as_line('Ничего не найдено!')
+
+    search_btn = ['❌ Поиск отмена', 'repsales_deny_1'] if search else ['🔍 Поиск', 'search_orders']
+    search_code = f'{search.replace(" ", "-20")}_' if search else ''
+    text_and_data = [
+        ['По дням', f'repsales{type}_{search_code}days_1'],
+        ['По неделям', f'repsales{type}_{search_code}weeks_1'],
+        ['По месяцам', f'repsales{type}_{search_code}months_1'],
+        ['Без группировки', f'repsales{type}_{search_code}withoutgroup_1'],
+        btn_back('reports'),
+        search_btn,
+    ]
+    schema = [2,2,2]
+
+    if page == 1:
+        if len(grouped_sales) > 10:
+            text_and_data.insert(0, ['След ➡️', f'repsales{type}_{search_code}{page + 1}'])
+            schema.insert(0, 1)
+    elif page == (len(grouped_sales) // 10) + 1 or page == len(grouped_sales) // 10:
+        text_and_data.insert(0, ['⬅️ Пред', f'repsales{type}_{search_code}{page - 1}'])
+        schema.insert(0, 1)
+    else:
+        text_and_data.insert(0, ['След ➡️', f'repsales{type}_{search_code}{page + 1}'])
+        text_and_data.insert(0, ['⬅️ Пред', f'repsales{type}_{search_code}{page - 1}'])
+        schema.insert(0, 2)
+
+    for i in range(len(text_and_data)):
+        if str(user.reports_groupby_period).replace('ReportsGroupByPeriod.', '').lower() in text_and_data[i][1]:
+            text_and_data[i][0] = '🟢 ' + text_and_data[i][0]
+            text_and_data[i][1] = 'none' 
+
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
+    return text.as_html(), reply_markup
+
+def inline_kb_new_order(db_request, order_id : int):
+    order = db_request.get_order(id=order_id)
+    product = db_request.get_product(id=order.product.id)
+    price = order.totalPrice * (1 - order.discountPercent / 100)
+    product_warehouse = db_request.get_product_warehouse(product_id=product.id)
+    sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    inWayToClient = sum([p.inWayToClient for p in product_warehouse])
+    inWayFromClient = sum([p.inWayFromClient for p in product_warehouse])
+    sales = len(sales_list) - inWayFromClient
+    gNumbers = [s['gNumber'] for s in sales_list]
+    orders = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date()]
+    today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date() and o['nmId'] == order.nmId]
+    yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == order.nmId]
+    orders_list = [o for o in orders if o['gNumber'] in gNumbers]
+    buyout = int((sales/len(orders_list)) * 100)
+    text = as_line(order.date,
+                   f'🛒 Заказ [{len(today_orders)}]: {price}₽',
+                   f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
+                   f'🆔 Арт: {order.nmId} 👉🏻',
+                   f'🛍️ WB скидка: {round(order.totalPrice * (order.discountPercent / 100), 2)}₽ ({order.discountPercent}%)',
+                   f'📁 {product.subject}',
+                   f'🏷 {product.brand} / {product.supplierArticle}',
+                   f'⭐ Рейтинг: {product.rating}',
+                   f'💬 Отзывы: {product.reviews}',
+                   f'💵 Сегодня таких: {len(today_orders_such)} на {int(sum(today_orders_such))}₽',
+                   f'💶 Вчера таких: {len(yesterday_orders_such)} на {int(sum(yesterday_orders_such))}₽',
+                   '🟥 ABC-анализ: C (5.78%)',
+                   f'💼 Комиссия базовая: {price * (1 - 19/100)}₽ (19%)',
+                   '💥 Акция: ???',
+                   f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_list)})',
+                   f'🌐 {order.warehouseName} → {order.oblast}: ???₽',
+                   f'🚛 В пути до клиента: {inWayToClient}',
+                   f'🚚 В пути возвраты: {inWayFromClient}',
+                   '📦 Алексин: ??? шт. хватит на ??? дн.',
+                   '',
+                   sep='\n'
+                   )
+    return text.as_html()

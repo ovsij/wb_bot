@@ -57,7 +57,6 @@ async def user_callback_query_handler(callback_query: types.CallbackQuery, state
         if len(code.split('_')) > 1:
             await state.clear()
             seller_id = int(code.split('_')[-1])
-            
             if 'isorders' in code:
                 employee = db_request.get_employee(seller_id=seller_id, user_id=db_request.get_user(tg_id=tg_id).id)
                 print(not employee.is_orders)
@@ -106,13 +105,13 @@ async def user_callback_query_handler(callback_query: types.CallbackQuery, state
             await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
         if 'delapifbo' in code:
             if 'accept' in code:
-                db_request.delete_seller(id=code.split('_')[-1])
+                db_request.delete_employee(id=code.split('_')[-1])
                 text, reply_markup = inline_kb_settings(db_request, tg_id=tg_id)
             else:
-                text, reply_markup = inline_kb_del_apifbo(db_request, seller_id=int(code.split('_')[-1]))
+                text, reply_markup = inline_kb_del_apifbo(db_request, seller_id=int(code.split('_')[-2]), employee_id=int(code.split('_')[-1]), tg_id=tg_id)
             await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
         else:
-            text, reply_markup = inline_kb_apifbo(db_request, seller_id=int(code.split('_')[-1]))
+            text, reply_markup = inline_kb_apifbo(db_request, seller_id=int(code.split('_')[-1]), tg_id=tg_id)
             await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
     if 'apifbs' in code:
         await state.set_state(Form.wb_token)
@@ -296,3 +295,121 @@ async def user_callback_query_handler(callback_query: types.CallbackQuery, state
             news_id = int(code.split('_')[-1])
             text, reply_markup = inline_kb_news(db_request, news_id=news_id, tg_id=tg_id)
         await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+    if code == 'stock':
+        text, reply_markup = inline_kb_stocks(db_request, tg_id=tg_id)
+        await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+    if 'selectseller' in code:
+        if len(code.split('_')) > 2:
+            user = db_request.get_user(tg_id=tg_id)
+            if 'all' in code:
+                for seller in db_request.get_seller(user_id=user.id):
+                    employee = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+                    db_request.update_employee(id=employee.id, is_selected=True)
+            else:
+                seller_id = int(code.split('_')[-1])
+                employee = db_request.get_employee(seller_id=seller_id, user_id=user.id)
+                if all([e.is_selected for e in db_request.get_employee(user_id=user.id)]) and '👉' in callback_query.message.reply_markup.inline_keyboard[-2][0].text:
+                    for seller in db_request.get_seller(user_id=user.id):
+                        employee_ = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+                        db_request.update_employee(id=employee_.id, is_selected=False)
+                    db_request.update_employee(id=employee.id, is_selected=True)
+                else:
+                    db_request.update_employee(id=employee.id, is_selected=not employee.is_selected)
+                if not any(e.is_selected for e in db_request.get_employee(user_id=user.id)):
+                    for seller in db_request.get_seller(user_id=user.id):
+                        employee_ = db_request.get_employee(seller_id=seller.id, user_id=user.id)
+                        db_request.update_employee(id=employee_.id, is_selected=True)
+        if 'stock' in code:
+            btn_back = 'stock'
+        elif 'reports' in code:
+            btn_back = 'reports'
+        code = code.split('_')[-1] if len(code.split('_')) > 2 else 'all'
+        text, reply_markup = inline_kb_selectseller(db_request, tg_id=tg_id, code=code, back=btn_back)
+        await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+    if 'myproducts' in code or 'favorites' in code or 'archive' in code:
+        if len(code.split('_')) > 2:
+            db_request.update_user(tg_id=tg_id, updated_fields={'stock_sorting': StockSorting.from_str(code.split('_')[1])})
+
+        text, reply_markup = inline_kb_stock_myproducts(db_request, tg_id=tg_id, page=int(code.split('_')[-1]), filter=code.split('_')[0])
+        msg = await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+        await state.set_state(Form.my_products)
+        await state.update_data(page=int(code.split('_')[-1]))
+        await state.update_data(msg_to_edit=msg)
+        await state.update_data(filter=code.split('_')[0])   
+    if 'addfav' in code or 'delfav' in code:
+        user = db_request.get_user(tg_id=tg_id)
+        for id in code.replace('addfav_', '').replace('delfav_', '').split('_'):
+            product = db_request.get_product(id=int(id))
+            employee = db_request.get_employee(seller_id=product.seller.id, user_id=user.id)
+            db_request.update_employee(id=employee.id, favorites=product.id)
+        data = await state.get_data()
+        text, reply_markup = inline_kb_stock_myproducts(db_request, tg_id=tg_id, page=data['page'], filter=data['filter'])
+        await callback_query.message.edit_text(text=text, reply_markup=reply_markup)     
+
+    if 'reports' in code:
+        if 'deny' in code:
+            await state.clear()
+            search = None
+        else:
+            data = await state.get_data()
+            try:
+                search = data['search']
+            except:
+                search = None
+
+        if len(code.split('_')) > 3:
+            db_request.update_user(tg_id=tg_id, updated_fields={'reports_groupby': ReportsGroupBy.from_str(code.split('_')[-3])})
+        
+        if code == 'reports':
+            text, reply_markup = inline_kb_reports(db_request, tg_id=tg_id)
+            await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+        elif code == 'reports_timedelta':
+            text, reply_markup = inline_kb_reports_timedelta()
+            msg = await callback_query.message.answer(text=text, reply_markup=reply_markup)
+            await state.set_state(Form.reports_timedelta)
+            await state.update_data(msg_for_edit=callback_query.message)
+            await state.update_data(msg_for_delete=msg)
+        else:
+            text, reply_markup = inline_kb_reports_byperiod(db_request, state, tg_id=tg_id, period=code.split('_')[-2], page=int(code.split('_')[-1]), search=search)
+            await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+    if 'reportorders' in code:
+        if 'deny' in code:
+            await state.clear()
+            search = None
+        else:
+            data = await state.get_data()
+            try:
+                search = data['search']
+            except:
+                search = None
+        if code.split('_')[-2] in ['days', 'weeks', 'months', 'withoutgroup']:
+            db_request.update_user(tg_id=tg_id, updated_fields={'reports_groupby_period': ReportsGroupByPeriod.from_str(code.split('_')[-2])})
+        text, reply_markup = inline_kb_orders(db_request, tg_id=tg_id, page=int(code.split('_')[-1]), search=search)
+        await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+    if 'repsales' in code:
+        if 'deny' in code:
+            await state.clear()
+            search = None
+        else:
+            data = await state.get_data()
+            try:
+                search = data['search']
+            except:
+                search = None
+        if code.split('_')[-2] in ['days', 'weeks', 'months', 'withoutgroup']:
+            db_request.update_user(tg_id=tg_id, updated_fields={'reports_groupby_period': ReportsGroupByPeriod.from_str(code.split('_')[-2])})
+        type = 'S' if 'S' in code else 'R' if 'R' in code else 'D'
+        text, reply_markup = inline_kb_sales(db_request, tg_id=tg_id, page=int(code.split('_')[-1]), search=search, type=type)
+        await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+
+    if 'search' in code:
+        await state.set_state(Form.search)
+        await state.update_data(type=code.split('_')[-1])
+        if 'report' in code:
+            await state.update_data(period=code.split('_')[-2])
+        text, reply_markup = inline_kb_search()
+        msg = await callback_query.message.answer(text=text, reply_markup=reply_markup)
+        await state.update_data(msg_to_delete=msg)
+        await state.update_data(msg_to_edit=callback_query.message)
+
+            
