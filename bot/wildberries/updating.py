@@ -24,7 +24,7 @@ async def update_sellers():
 
         await asyncio.gather(*tasks)
         print('tasks update_sellers created')
-        await asyncio.sleep(1800)
+        await asyncio.sleep(900)
 
 async def update_seller(seller, tariff : bool = None):
     db_request = DbRequests()

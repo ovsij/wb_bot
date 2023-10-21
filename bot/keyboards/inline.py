@@ -7,6 +7,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.config import load_config
 from bot.database.enum import *
 from bot.keyboards import InlineConstructor, btn_back
+from bot.utils import abc_analysis
 
 config = load_config('.env')
 
@@ -1447,7 +1448,7 @@ def inline_kb_sales(db_request, tg_id : str = None, page : int = None, search : 
 def inline_kb_new_order(db_request, order_id : int):
     order = db_request.get_order(id=order_id)
     product = db_request.get_product(id=order.product.id)
-    price = order.totalPrice * (1 - order.discountPercent / 100)
+    price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
     product_warehouse = db_request.get_product_warehouse(product_id=product.id)
     sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
     inWayToClient = sum([p.inWayToClient for p in product_warehouse])
@@ -1455,11 +1456,13 @@ def inline_kb_new_order(db_request, order_id : int):
     sales = len(sales_list) - inWayFromClient
     gNumbers = [s['gNumber'] for s in sales_list]
     orders = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
-    today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date()]
-    today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date() and o['nmId'] == order.nmId]
+    today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
+    today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date()]
     yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == order.nmId]
     orders_list = [o for o in orders if o['gNumber'] in gNumbers]
     buyout = int((sales/len(orders_list)) * 100)
+    abc, abc_percent = abc_analysis.get_abc(db_request, product_id=product.id, seller_id=product.seller.id)
+    abc_emoji = '🟩' if abc == 'A' else '🟧' if abc == 'B' else '🟥'
     text = as_line(order.date,
                    f'🛒 Заказ [{len(today_orders)}]: {price}₽',
                    f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
@@ -1471,8 +1474,8 @@ def inline_kb_new_order(db_request, order_id : int):
                    f'💬 Отзывы: {product.reviews}',
                    f'💵 Сегодня таких: {len(today_orders_such)} на {int(sum(today_orders_such))}₽',
                    f'💶 Вчера таких: {len(yesterday_orders_such)} на {int(sum(yesterday_orders_such))}₽',
-                   '🟥 ABC-анализ: C (5.78%)',
-                   f'💼 Комиссия базовая: {price * (1 - 19/100)}₽ (19%)',
+                   f'{abc_emoji} ABC-анализ: {abc} ({abc_percent}%)',
+                   f'💼 Комиссия базовая: {round(price * (1 - 19/100), 2)}₽ (19%)',
                    '💥 Акция: ???',
                    f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_list)})',
                    f'🌐 {order.warehouseName} → {order.oblast}: ???₽',
