@@ -131,7 +131,7 @@ class Order(db.Entity):
     orderType = Optional(str)
 
 class Sale(db.Entity):
-    __table_name__ = "orders"
+    __table_name__ = "sales"
 
     id = PrimaryKey(int, auto=True)
     product = Required(Product)

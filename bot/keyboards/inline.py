@@ -7,6 +7,7 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from bot.config import load_config
 from bot.database.enum import *
 from bot.keyboards import InlineConstructor, btn_back
+from bot.wildberries import WbParser
 from bot.utils import abc_analysis
 
 config = load_config('.env')
@@ -1445,12 +1446,40 @@ def inline_kb_sales(db_request, tg_id : str = None, page : int = None, search : 
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
     return text.as_html(), reply_markup
 
-def inline_kb_new_order(db_request, order_id : int):
+LOGISTICS = {
+    'Астана': 8,
+    'Атакент': 8,
+    'Санкт-Петербург': 26,
+    'Невинномысск': 30,
+    'Краснодар': 32,
+    'Краснодар 2': 32,
+    'Тула': 38,
+    'Пушкино': 40,
+    'Радумля 1': 40,
+    'Радумля КБТ': 40,
+    'Казань': 44,
+    'Санкт-Петербург 2': 44,
+    'Вёшки': 45.6,
+    'Белая дача': 48,
+    'МЛП-Подольск': 48,
+    'Электросталь': 56,
+    'Белые Столбы': 60,
+    'Коледино': 60,
+    'Подольск': 60,
+    'Хабаровск': 60,
+    'Чехов 2': 60,
+    'Маркетплейс': 64,
+    'Екатеринбург': 134,
+    'Екатеринбург 2': 134,
+    'Новосибирск': 134,
+}
+async def inline_kb_new_order(db_request, order_id : int, employee : int):
     order = db_request.get_order(id=order_id)
     product = db_request.get_product(id=order.product.id)
     price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
     product_warehouse = db_request.get_product_warehouse(product_id=product.id)
     sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    spp = [s['spp'] for s in sales_list if s['nmId'] == order.nmId][-1]
     inWayToClient = sum([p.inWayToClient for p in product_warehouse])
     inWayFromClient = sum([p.inWayFromClient for p in product_warehouse])
     sales = len(sales_list) - inWayFromClient
@@ -1463,11 +1492,34 @@ def inline_kb_new_order(db_request, order_id : int):
     buyout = int((sales/len(orders_list)) * 100)
     abc, abc_percent = abc_analysis.get_abc(db_request, product_id=product.id, seller_id=product.seller.id)
     abc_emoji = '🟩' if abc == 'A' else '🟧' if abc == 'B' else '🟥'
+    warehouses = {}
+    quantity_till_total = 0
+    quantity_total = 0
+    for pw in product_warehouse:
+        warehouse = db_request.get_warehouse(id=pw.warehouse.id)
+        
+        orders_warehouse = len([o for o in orders if o['warehouse'] == warehouse.warehouseName])
+        if pw.quantity > 0:    
+            try:
+                warehouses[warehouse.warehouseName][0] += pw.quantity
+            except:
+                warehouses[warehouse.warehouseName] = [pw.quantity]
+            if orders_warehouse > 0:
+                quantity_till = int(pw.quantity / (orders_warehouse / 91))
+                warehouses[warehouse.warehouseName].append(quantity_till)
+                quantity_till_total += quantity_till
+                quantity_total += pw.quantity
+    try:
+        logistic_price = f": {LOGISTICS[order.warehouseName]}₽"
+        
+    except:
+        logistic_price = ''
+
     text = as_line(order.date,
                    f'🛒 Заказ [{len(today_orders)}]: {price}₽',
                    f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
                    f'🆔 Арт: {order.nmId} 👉🏻',
-                   f'🛍️ WB скидка: {round(order.totalPrice * (order.discountPercent / 100), 2)}₽ ({order.discountPercent}%)',
+                   f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
                    f'📁 {product.subject}',
                    f'🏷 {product.brand} / {product.supplierArticle}',
                    f'⭐ Рейтинг: {product.rating}',
@@ -1476,13 +1528,93 @@ def inline_kb_new_order(db_request, order_id : int):
                    f'💶 Вчера таких: {len(yesterday_orders_such)} на {int(sum(yesterday_orders_such))}₽',
                    f'{abc_emoji} ABC-анализ: {abc} ({abc_percent}%)',
                    f'💼 Комиссия базовая: {round(price * (1 - 19/100), 2)}₽ (19%)',
-                   '💥 Акция: ???',
                    f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_list)})',
-                   f'🌐 {order.warehouseName} → {order.oblast}: ???₽',
+                   f'🌐 {order.warehouseName} → {order.oblast}{logistic_price}',
                    f'🚛 В пути до клиента: {inWayToClient}',
                    f'🚚 В пути возвраты: {inWayFromClient}',
-                   '📦 Алексин: ??? шт. хватит на ??? дн.',
                    '',
                    sep='\n'
                    )
+    for name, quantity in warehouses.items():
+        text += as_line(f'📦 {name}: {quantity[0]} шт. хватит на {quantity[1]} дн.')
+
+    if employee.stock_reserve > quantity_till_total:
+            income = int((len(orders_list)/91) * employee.stock_reserve - quantity_total)
+            text += as_line(f'🚗 Пополните склад на {income} шт.')
+    elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
+        text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
+    return text.as_html()
+
+async def inline_kb_new_sale(db_request, sale_id : int, employee : int):
+    sale = db_request.get_sale(id=sale_id)
+    sales_order = db_request.get_order(odid=sale.odid)
+    date_from_order = (sale.date - sales_order.date).days
+    product = db_request.get_product(id=sale.product.id)
+    price = sale.priceWithDisc
+    product_warehouse = db_request.get_product_warehouse(product_id=product.id)
+    sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    spp = sale.spp
+    inWayToClient = sum([p.inWayToClient for p in product_warehouse])
+    inWayFromClient = sum([p.inWayFromClient for p in product_warehouse])
+    sales = len(sales_list) - inWayFromClient
+    gNumbers = [s['gNumber'] for s in sales_list]
+    orders = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
+    today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date()]
+    yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == sale.nmId]
+    orders_list = [o for o in orders if o['gNumber'] in gNumbers]
+    buyout = int((sales/len(orders_list)) * 100)
+    abc, abc_percent = abc_analysis.get_abc(db_request, product_id=product.id, seller_id=product.seller.id)
+    abc_emoji = '🟩' if abc == 'A' else '🟧' if abc == 'B' else '🟥'
+    warehouses = {}
+    quantity_till_total = 0
+    quantity_total = 0
+    for pw in product_warehouse:
+        warehouse = db_request.get_warehouse(id=pw.warehouse.id)
+        orders_warehouse = len([o for o in orders if o['warehouse'] == warehouse.warehouseName])
+        if pw.quantity > 0:    
+            try:
+                warehouses[warehouse.warehouseName][0] += pw.quantity
+            except:
+                warehouses[warehouse.warehouseName] = [pw.quantity]
+            if orders_warehouse > 0:
+                quantity_till = int(pw.quantity / (orders_warehouse / 91))
+                warehouses[warehouse.warehouseName].append(quantity_till)
+                quantity_till_total += quantity_till
+                quantity_total += pw.quantity
+    try:
+        logistic_price = f": {LOGISTICS[sale.warehouseName]}₽"
+        
+    except:
+        logistic_price = ''
+    sale_type = '✅ Выкуп' if sale.saleID.startswith('S') else '⛔️ Отмена'
+    text = as_line(sale.date,
+                   f'{sale_type} [{len(today_orders)}]: {price}₽',
+                   f'⏱️ От даты заказа: {date_from_order} дн.',
+                   f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
+                   f'🆔 Арт: {sale.nmId} 👉🏻',
+                   f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
+                   f'📁 {product.subject}',
+                   f'🏷 {product.brand} / {product.supplierArticle}',
+                   f'⭐ Рейтинг: {product.rating}',
+                   f'💬 Отзывы: {product.reviews}',
+                   f'💵 Сегодня таких: {len(today_orders_such)} на {int(sum(today_orders_such))}₽',
+                   f'💶 Вчера таких: {len(yesterday_orders_such)} на {int(sum(yesterday_orders_such))}₽',
+                   f'{abc_emoji} ABC-анализ: {abc} ({abc_percent}%)',
+                   f'💼 Комиссия базовая: {round(price * (1 - 19/100), 2)}₽ (19%)',
+                   f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_list)})',
+                   f'🌐 {sale.warehouseName} → {sale.regionName}{logistic_price}',
+                   f'🚛 В пути до клиента: {inWayToClient}',
+                   f'🚚 В пути возвраты: {inWayFromClient}',
+                   '',
+                   sep='\n'
+                   )
+    for name, quantity in warehouses.items():
+        text += as_line(f'📦 {name}: {quantity[0]} шт. хватит на {quantity[1]} дн.')
+
+    if employee.stock_reserve > quantity_till_total:
+            income = int((len(orders_list)/91) * employee.stock_reserve - quantity_total)
+            text += as_line(f'🚗 Пополните склад на {income} шт.')
+    elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
+        text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
     return text.as_html()

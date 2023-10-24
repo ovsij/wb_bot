@@ -1,5 +1,6 @@
 import asyncio, aiofiles, aiohttp
 from bs4 import BeautifulSoup as bs
+from datetime import datetime
 import requests
 import os
 
@@ -39,3 +40,14 @@ class WbParser:
                     f = await aiofiles.open(f'bot/database/images/{article}.jpg', mode='wb')
                     await f.write(await response.read())
                     await f.close()
+
+    async def get_logistic():
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            date = datetime.now().strftime('%Y-%m-%d')
+            url = f'https://seller-weekly-report.wildberries.ru/ns/categories-info/suppliers-portal-analytics/api/v1/tariffs-period?date={date}&short=false'
+            async with session.get(url, data={"box":"asc"}, ssl=False) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    print(result)
+                else:
+                    print(response)

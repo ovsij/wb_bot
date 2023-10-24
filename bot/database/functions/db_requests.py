@@ -406,11 +406,14 @@ class DbRequests:
         
     """Warehouse requests"""
     @db_session()
-    def get_warehouse(self, warehouseName : str, ):
-        if Warehouse.exists(warehouseName=warehouseName):
-            return Warehouse.get(warehouseName=warehouseName)
+    def get_warehouse(self, id : int = None, warehouseName : str = None, ):
+        if id:
+            return Warehouse[id]
         else:
-            return Warehouse(warehouseName=warehouseName)
+            if Warehouse.exists(warehouseName=warehouseName):
+                return Warehouse.get(warehouseName=warehouseName)
+            else:
+                return Warehouse(warehouseName=warehouseName)
         
     """Product_Warehouse requests"""
     @db_session()
@@ -519,8 +522,8 @@ class DbRequests:
             if re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                 datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                 dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
-                query = select((o.id, o.totalPrice, o.discountPercent, o.gNumber, o.date, o.nmId) for o in Order if o.product.id == product_id and o.date.date() >= datefrom and o.date.date() <= dateto)[:]
-                return [{'id': q[0], 'totalPrice': q[1], 'discountPercent': q[2], 'gNumber': q[3], 'date': q[4], 'nmId': q[5]} for q in query]
+                query = select((o.id, o.totalPrice, o.discountPercent, o.gNumber, o.date, o.nmId, o.warehouseName) for o in Order if o.product.id == product_id and o.date.date() >= datefrom and o.date.date() <= dateto)[:]
+                return [{'id': q[0], 'totalPrice': q[1], 'discountPercent': q[2], 'gNumber': q[3], 'date': q[4], 'nmId': q[5], 'warehouse' : q[6]} for q in query]
         elif tg_id:
             user = User.get(tg_id=tg_id)
             sellers = select(us.seller for us in user.sellers if us.is_selected)[:]
@@ -529,7 +532,7 @@ class DbRequests:
 
     """Sales requests"""
     @db_session()
-    async def create_sale(self, gNumber : str, 
+    def create_sale(self, gNumber : str, 
                      date : datetime, 
                      lastChangeDate : datetime, 
                      supplierArticle : str, 
@@ -556,9 +559,7 @@ class DbRequests:
                      brand : str, 
                      sticker : str, 
                      srid : str, ):
-        if Sale.exists(odid=odid):
-            sale = Sale.get(odid=odid)
-        else:
+        if not Sale.exists(odid=odid):
             product = Product.get(barcode=barcode)
             if not product:
                 return
@@ -596,7 +597,10 @@ class DbRequests:
                         brand=product.brand, 
                         sticker=sticker, 
                         srid=srid, )
-        return sale
+            flush()
+            return sale
+        else:
+            return None
         
 
     @db_session()
@@ -639,8 +643,8 @@ class DbRequests:
             if re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                 datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                 dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
-                query = select((s.id, s.priceWithDisc, s.gNumber) for s in Sale if s.product.id == product_id and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type) and s.order)[:]
-                return [{'priceWithDisc': q[1], 'gNumber': q[2]} for q in query]
+                query = select((s.id, s.priceWithDisc, s.gNumber, s.nmId, s.spp) for s in Sale if s.product.id == product_id and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type) and s.order)[:]
+                return [{'priceWithDisc': q[1], 'gNumber': q[2], 'nmId': q[3], 'spp': q[4]} for q in query]
         elif tg_id:
             user = User.get(tg_id=tg_id)
             sellers = select(us.seller for us in user.sellers if us.is_selected)[:]

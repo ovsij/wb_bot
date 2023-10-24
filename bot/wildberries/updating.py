@@ -77,82 +77,94 @@ async def update_seller(seller, tariff : bool = None):
     except Exception as ex:
         print(ex)
     """UPDATING ORDERS"""
-    try:
-        print(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
-        orders = await Statistics.get_orders(db_request, seller)
-        new_orders = []
-        for order in orders:
-            new_order = db_request.create_order(gNumber=order['gNumber'],
-                                    date=order['date'],
-                                    lastChangeDate=order['lastChangeDate'],
-                                    supplierArticle=order['supplierArticle'],
-                                    techSize=order['techSize'],
-                                    barcode=order['barcode'],
-                                    totalPrice=order['totalPrice'],
-                                    discountPercent=order['discountPercent'],
-                                    warehouseName=order['warehouseName'],
-                                    oblast=order['oblast'],
-                                    incomeID=order['incomeID'],
-                                    odid=order['odid'],
-                                    nmId=order['nmId'],
-                                    subject=order['subject'],
-                                    category=order['category'],
-                                    brand=order['brand'],
-                                    isCancel=order['isCancel'],
-                                    cancel_dt=order['cancel_dt'],
-                                    sticker=order['sticker'],
-                                    srid=order['srid'],
-                                    orderType=order['orderType'],)
-            #await asyncio.sleep(0.00001)
-            if new_order != None:
-                new_orders.append(new_order)
-        for order in new_orders:
-            text = inline_kb_new_order(db_request, order_id=order.id)
-            for employee in db_request.get_employee(seller_id=seller.id):
-                user = db_request.get_user(id=employee.user.id)
-                try:
-                    photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
-                    await bot.send_photo(user.tg_id, photo=photo, caption=text)
-                except Exception as ex:
-                    print(ex)
-        
-    except Exception as ex:
-        print(ex)
+    #try:
+    print(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
+    orders = await Statistics.get_orders(db_request, seller)
+    new_orders = []
+    for order in orders:
+        new_order = db_request.create_order(gNumber=order['gNumber'],
+                                date=order['date'],
+                                lastChangeDate=order['lastChangeDate'],
+                                supplierArticle=order['supplierArticle'],
+                                techSize=order['techSize'],
+                                barcode=order['barcode'],
+                                totalPrice=order['totalPrice'],
+                                discountPercent=order['discountPercent'],
+                                warehouseName=order['warehouseName'],
+                                oblast=order['oblast'],
+                                incomeID=order['incomeID'],
+                                odid=order['odid'],
+                                nmId=order['nmId'],
+                                subject=order['subject'],
+                                category=order['category'],
+                                brand=order['brand'],
+                                isCancel=order['isCancel'],
+                                cancel_dt=order['cancel_dt'],
+                                sticker=order['sticker'],
+                                srid=order['srid'],
+                                orderType=order['orderType'],)
+        #await asyncio.sleep(0.00001)
+        if new_order != None:
+            new_orders.append(new_order)
+    for order in new_orders:
+        for employee in db_request.get_employee(seller_id=seller.id):
+            text = await inline_kb_new_order(db_request, order_id=order.id, employee=employee)
+            user = db_request.get_user(id=employee.user.id)
+            try:
+                photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
+                await bot.send_photo(user.tg_id, photo=photo, caption=text)
+            except Exception as ex:
+                print(ex)
+            
+    #except Exception as ex:
+    #    print(ex)
     """UPDATING SALES"""
-    try:
-        print(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
-        sales = await Statistics.get_sales(db_request, seller)
-        for sale in sales:
-            await db_request.create_sale(gNumber=sale['gNumber'],
-                                date=sale['date'],
-                                lastChangeDate=sale['lastChangeDate'],
-                                supplierArticle=sale['supplierArticle'],
-                                techSize=sale['techSize'],
-                                barcode=sale['barcode'],
-                                totalPrice=sale['totalPrice'],
-                                discountPercent=sale['discountPercent'], 
-                                isSupply=sale['isSupply'],
-                                isRealization=sale['isRealization'],
-                                warehouseName=sale['warehouseName'], 
-                                countryName=sale['countryName'], 
-                                oblastOkrugName=sale['oblastOkrugName'], 
-                                regionName=sale['regionName'], 
-                                incomeID=sale['incomeID'], 
-                                saleID=sale['saleID'], 
-                                odid=sale['odid'], 
-                                spp=sale['spp'], 
-                                forPay=sale['forPay'], 
-                                finishedPrice=sale['finishedPrice'], 
-                                priceWithDisc=sale['priceWithDisc'], 
-                                nmId=sale['nmId'], 
-                                subject=sale['subject'], 
-                                category=sale['category'], 
-                                brand=sale['brand'], 
-                                sticker=sale['sticker'], 
-                                srid=sale['srid'], )
-            await asyncio.sleep(0.00001)
-    except Exception as ex:
-        print(ex)
+    #try:
+    print(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
+    sales = await Statistics.get_sales(db_request, seller)
+    new_sales = []
+    for sale in sales:
+        new_sale = db_request.create_sale(gNumber=sale['gNumber'],
+                            date=sale['date'],
+                            lastChangeDate=sale['lastChangeDate'],
+                            supplierArticle=sale['supplierArticle'],
+                            techSize=sale['techSize'],
+                            barcode=sale['barcode'],
+                            totalPrice=sale['totalPrice'],
+                            discountPercent=sale['discountPercent'], 
+                            isSupply=sale['isSupply'],
+                            isRealization=sale['isRealization'],
+                            warehouseName=sale['warehouseName'], 
+                            countryName=sale['countryName'], 
+                            oblastOkrugName=sale['oblastOkrugName'], 
+                            regionName=sale['regionName'], 
+                            incomeID=sale['incomeID'], 
+                            saleID=sale['saleID'], 
+                            odid=sale['odid'], 
+                            spp=sale['spp'], 
+                            forPay=sale['forPay'], 
+                            finishedPrice=sale['finishedPrice'], 
+                            priceWithDisc=sale['priceWithDisc'], 
+                            nmId=sale['nmId'], 
+                            subject=sale['subject'], 
+                            category=sale['category'], 
+                            brand=sale['brand'], 
+                            sticker=sale['sticker'], 
+                            srid=sale['srid'], )
+        #await asyncio.sleep(0.00001)
+        if new_sale != None:
+            new_sales.append(new_sale)
+    for sale in new_sales:
+        for employee in db_request.get_employee(seller_id=seller.id):
+            text = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee)
+            user = db_request.get_user(id=employee.user.id)
+            try:
+                photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
+                await bot.send_photo(user.tg_id, photo=photo, caption=text)
+            except Exception as ex:
+                print(ex)
+    #except Exception as ex:
+    #    print(ex)
 
 
     end = datetime.now()

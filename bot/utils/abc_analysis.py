@@ -11,14 +11,11 @@ def get_abc(db_request, product_id, seller_id):
         total_revenue += sales_revenue
     
     sorted_products_revenue = sorted(products_revenue.items(), key=lambda item: item[1], reverse=True)
-    print(product_id)
 
     cummulative_total = 0
     for product, revenue in sorted_products_revenue:
         abc_percent = revenue / total_revenue * 100
         cummulative_total += abc_percent
-        print(cummulative_total)
-        print(product)
         if product == product_id:
             if cummulative_total <= 80:
                 abc = 'A'
