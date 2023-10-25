@@ -1535,6 +1535,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int):
                    '',
                    sep='\n'
                    )
+    print(warehouses)
     for name, quantity in warehouses.items():
         text += as_line(f'📦 {name}: {quantity[0]} шт. хватит на {quantity[1]} дн.')
 
