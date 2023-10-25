@@ -737,11 +737,12 @@ def inline_kb_selectseller(db_request, tg_id : str, code : str = 'all', back : s
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
     return text.as_html(), reply_markup
 
-def inline_kb_stock_myproducts(db_request, tg_id : str, page : int = 1, filter : str = None):
+def inline_kb_stock_myproducts(db_request, tg_id : str, page : int = 1, filter : str = None, search : str = None):
+    filter = filter.replace('deny', '')
     title = 'МОИ ТОВАРЫ' if filter == 'myproducts' else 'ИЗБРАННОЕ' if filter == 'favorites' else 'АРХИВ'
-    text = as_line(Bold(title),
-                   sep='\n'
-    )
+    text = as_line(Bold(title))
+    if search:
+        text += as_line(Bold('Поиск: '), f'🔍 "{search}"\n', sep=' ')
     user = db_request.get_user(tg_id=tg_id)
     products_dcts = []
     total_revenue = {}
@@ -749,6 +750,9 @@ def inline_kb_stock_myproducts(db_request, tg_id : str, page : int = 1, filter :
     for seller_id in seller_ids:
         products = db_request.get_product(seller_id=seller_id)
         for product in products:
+            if search:
+                if str(product.nmId) != search and str(product.supplierArticle) != search and str(product.brand) != search and str(product.subject) != search:
+                    continue
             user_seller = db_request.get_employee(user_id=user.id, seller_id=product.seller.id)
             product_warehouse = db_request.get_product_warehouse(product_id=product.id)
             products_dct = {}
@@ -870,6 +874,8 @@ def inline_kb_stock_myproducts(db_request, tg_id : str, page : int = 1, filter :
         addfavorites_text = '💟 Добавить всё в избранное'
         favorites_code = addfavorites_code
     
+    search_btn = ['❌ Поиск отмена', f'{filter}deny_1'] if search else ['🔍 Поиск', f'search_{filter}']
+
     text_and_data = [
         ['Продажи 🔺', f'{filter}_salesASC_1'],
         ['Продажи 🔻', f'{filter}_salesDESC_1'],
@@ -887,7 +893,7 @@ def inline_kb_stock_myproducts(db_request, tg_id : str, page : int = 1, filter :
         ['ABC-анализ 🔻', f'{filter}_abcDESC_1'],
         [addfavorites_text, favorites_code],
         btn_back('stock'),
-        ['🔍 Поиск', 'none'],
+        search_btn,
     ]
     for i in range(len(text_and_data)):
         if str(user.stock_sorting).strip('StockSorting.') in text_and_data[i][1]:

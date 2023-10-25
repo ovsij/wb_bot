@@ -109,11 +109,13 @@ async def reports_search(message: Message, db_request: DbRequests, state: FSMCon
         data = await state.get_data()
         await data['msg_to_delete'].delete()
         await message.delete()
-        if data['type'] == 'orders':
+        if data['type'] == 'myproducts' or data['type'] == 'favorites' or data['type'] == 'archive':
+            text, reply_markup = inline_kb_stock_myproducts(db_request, tg_id=str(message.from_user.id), page=1, filter=data['type'], search=message.text)
+        elif data['type'] == 'orders':
             text, reply_markup = inline_kb_orders(db_request, tg_id=str(message.from_user.id), page=1, search=message.text)
-        if data['type'] == 'sales':
+        elif data['type'] == 'sales':
             text, reply_markup = inline_kb_sales(db_request, tg_id=str(message.from_user.id), page=1, search=message.text)
-        if data['type'] == 'report':
+        elif data['type'] == 'report':
             text, reply_markup = inline_kb_reports_byperiod(db_request, state, tg_id=str(message.from_user.id), period=data['period'], page=1, search=message.text)
         await data['msg_to_edit'].edit_text(text=text, reply_markup=reply_markup)
         await state.update_data(search=message.text)

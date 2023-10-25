@@ -326,11 +326,19 @@ async def user_callback_query_handler(callback_query: types.CallbackQuery, state
         code = code.split('_')[-1] if len(code.split('_')) > 2 else 'all'
         text, reply_markup = inline_kb_selectseller(db_request, tg_id=tg_id, code=code, back=btn_back)
         await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
-    if 'myproducts' in code or 'favorites' in code or 'archive' in code:
+    if ('myproducts' in code or 'favorites' in code or 'archive' in code) and 'search' not in code:
         if len(code.split('_')) > 2:
             db_request.update_user(tg_id=tg_id, updated_fields={'stock_sorting': StockSorting.from_str(code.split('_')[1])})
-
-        text, reply_markup = inline_kb_stock_myproducts(db_request, tg_id=tg_id, page=int(code.split('_')[-1]), filter=code.split('_')[0])
+        if 'deny' in code:
+            await state.clear()
+            search = None
+        else:
+            data = await state.get_data()
+            try:
+                search = data['search']
+            except:
+                search = None
+        text, reply_markup = inline_kb_stock_myproducts(db_request, tg_id=tg_id, page=int(code.split('_')[-1]), filter=code.split('_')[0], search=search)
         msg = await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
         await state.set_state(Form.my_products)
         await state.update_data(page=int(code.split('_')[-1]))
