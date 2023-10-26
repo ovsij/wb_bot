@@ -106,15 +106,19 @@ async def update_seller(seller, tariff : bool = None):
             #await asyncio.sleep(0.00001)
             if new_order != None:
                 new_orders.append(new_order)
+        total_new_orders = len(new_orders)
         for order in new_orders:
             for employee in db_request.get_employee(seller_id=seller.id):
-                text = await inline_kb_new_order(db_request, order_id=order.id, employee=employee)
-                user = db_request.get_user(id=employee.user.id)
-                try:
-                    photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
-                    await bot.send_photo(user.tg_id, photo=photo, caption=text)
-                except Exception as ex:
-                    print(ex)
+                if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
+                    text = await inline_kb_new_order(db_request, order_id=order.id, employee=employee, minus_total=total_new_orders)
+                    total_new_orders -= 1
+                    if text:
+                        user = db_request.get_user(id=employee.user.id)
+                        try:
+                            photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
+                            await bot.send_photo(user.tg_id, photo=photo, caption=text)
+                        except Exception as ex:
+                            print(ex)
             
     except Exception as ex:
         print(ex)
@@ -154,9 +158,11 @@ async def update_seller(seller, tariff : bool = None):
             #await asyncio.sleep(0.00001)
             if new_sale != None:
                 new_sales.append(new_sale)
+        total_new_sales = len(new_sales)
         for sale in new_sales:
             for employee in db_request.get_employee(seller_id=seller.id):
-                text = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee)
+                text = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
+                total_new_sales -= 1
                 user = db_request.get_user(id=employee.user.id)
                 try:
                     photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')

@@ -1479,7 +1479,7 @@ LOGISTICS = {
     'Екатеринбург 2': 134,
     'Новосибирск': 134,
 }
-async def inline_kb_new_order(db_request, order_id : int, employee : int):
+async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_total : int):
     order = db_request.get_order(id=order_id)
     product = db_request.get_product(id=order.product.id)
     price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
@@ -1522,7 +1522,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int):
         logistic_price = ''
 
     text = as_line(order.date,
-                   f'🛒 Заказ [{len(today_orders)}]: {price}₽',
+                   f'🛒 Заказ [{len(today_orders) - minus_total}]: {price}₽',
                    f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
                    f'🆔 Арт: {order.nmId} 👉🏻',
                    f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
@@ -1550,9 +1550,19 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int):
             text += as_line(f'🚗 Пополните склад на {income} шт.')
     elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
-    return text.as_html()
+    
+    is_all = all([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites])
+    if is_all:
+        return text.as_html()
+    else:
+        if employee.order_notif_end and quantity_total == 0 \
+            or employee.order_notif_ending and employee.stock_reserve < quantity_till_total \
+            or employee.order_notif_favorites and product in employee.favorites:
 
-async def inline_kb_new_sale(db_request, sale_id : int, employee : int):
+            return text.as_html()
+        
+
+async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_total : int):
     sale = db_request.get_sale(id=sale_id)
     sales_order = db_request.get_order(odid=sale.odid)
     date_from_order = (sale.date - sales_order.date).days
@@ -1596,7 +1606,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int):
         logistic_price = ''
     sale_type = '✅ Выкуп' if sale.saleID.startswith('S') else '⛔️ Отмена'
     text = as_line(sale.date,
-                   f'{sale_type} [{len(today_orders)}]: {price}₽',
+                   f'{sale_type} [{len(today_orders) - minus_total}]: {price}₽',
                    f'⏱️ От даты заказа: {date_from_order} дн.',
                    f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
                    f'🆔 Арт: {sale.nmId} 👉🏻',
@@ -1624,4 +1634,14 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int):
             text += as_line(f'🚗 Пополните склад на {income} шт.')
     elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
-    return text.as_html()
+    
+
+    is_all = all([employee.buyout_notif_end, employee.buyout_notif_ending, employee.buyout_notif_favorites])
+    if is_all:
+        return text.as_html()
+    else:
+        if employee.buyout_notif_end and quantity_total == 0 \
+            or employee.buyout_notif_ending and employee.stock_reserve < quantity_till_total \
+            or employee.buyout_notif_favorites and product in employee.favorites:
+            
+            return text.as_html()
