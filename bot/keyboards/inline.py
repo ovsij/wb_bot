@@ -1556,7 +1556,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         return text.as_html()
     else:
         if employee.order_notif_end and quantity_total == 0 \
-            or employee.order_notif_ending and employee.stock_reserve < quantity_till_total \
+            or employee.order_notif_ending and employee.stock_reserve > quantity_till_total \
             or employee.order_notif_favorites and product in employee.favorites:
 
             return text.as_html()
@@ -1641,7 +1641,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
         return text.as_html()
     else:
         if employee.buyout_notif_end and quantity_total == 0 \
-            or employee.buyout_notif_ending and employee.stock_reserve < quantity_till_total \
+            or employee.buyout_notif_ending and employee.stock_reserve > quantity_till_total \
             or employee.buyout_notif_favorites and product in employee.favorites:
             
             return text.as_html()
