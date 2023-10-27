@@ -1560,6 +1560,8 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
             or employee.order_notif_favorites and product in employee.favorites:
 
             return text.as_html()
+        else:
+            return False
         
 
 async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_total : int):
@@ -1645,3 +1647,5 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
             or employee.buyout_notif_favorites and product in employee.favorites:
             
             return text.as_html()
+        else:
+            return False
