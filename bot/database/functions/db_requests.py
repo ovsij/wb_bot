@@ -101,8 +101,8 @@ class DbRequests:
                 return select(s.seller for s in User[user_id].sellers if not s.seller.test_period)[:]
             else:
                 return select(s.seller for s in User[user_id].sellers)[:]
-        elif test_period:
-            return select(s for s in Seller if s.test_period)[:]
+        elif test_period != None:
+            return select(s for s in Seller if s.test_period == test_period)[:]
         else:
             return select(s for s in Seller)[:]
     
@@ -160,11 +160,14 @@ class DbRequests:
         return User_Seller.exists(user=User[user_id])
     
     @db_session()
-    def get_employee(self, id : int = None, seller_id : int = None, user_id : int = None):
+    def get_employee(self, id : int = None, seller_id : int = None, user_id : int = None, balance : bool = None):
         if id:
             return User_Seller[id]
         if seller_id and not user_id:
-            return select(u for u in User_Seller if u.seller.id == seller_id)[:]
+            if balance:
+                return select(u for u in User_Seller if u.seller.id == seller_id and u.user.balance > 0)[:]
+            else:
+                return select(u for u in User_Seller if u.seller.id == seller_id)[:]
         if seller_id and user_id:
             return select(u for u in User_Seller if u.seller.id == seller_id and u.user.id == user_id)[:][0]
         if user_id and not seller_id:
@@ -258,7 +261,7 @@ class DbRequests:
         else:
             transaction = Transaction(user=user, sum=sum, type=type, tariff=tariff, seller_name=seller_name, bill_link=bill_link_)
             user.balance -= sum
-            transaction.balance = user.balance
+            transaction.balance = round(user.balance, 2)
 
         if bill_number:
             transaction.bill_number = bill_number

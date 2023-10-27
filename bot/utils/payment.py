@@ -1,7 +1,10 @@
 import asyncio
 from datetime import date, datetime, timedelta
 
+from bot import bot
+from bot.keyboards import *
 from bot.database.functions.db_requests import DbRequests
+
 
 DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
@@ -10,31 +13,53 @@ async def regular_payment():
     while True:
         db_request = DbRequests()
         tasks = set()
-        for user in db_request.get_user(balance=True):
-            task = asyncio.create_task(payment(db_request, user))
-            tasks.add(task)
+        for seller in db_request.get_seller(test_period=False):
+            try:
+                if (datetime.now() - seller.last_payment_date) > timedelta(hours=23.5):
+                    task = asyncio.create_task(payment(db_request, seller))
+                    tasks.add(task)
+            except:
+                if not seller.is_active:
+                    task = asyncio.create_task(payment(db_request, seller))
+                    tasks.add(task)
         await asyncio.gather(*tasks)
         print('tasks regular_payment created')
         await asyncio.sleep(1800)
             
 
-async def payment(db_request, user):
-    sellers = db_request.get_seller(user_id=user.id, test_period=False)
-    for seller in sellers:
-        if (datetime.now() - seller.last_payment_date) > timedelta(hours=23.5):
-            employee = db_request.get_employee(user_id=user.id, seller_id=seller.id)
+async def payment(db_request, seller):
+    users = db_request.get_employee(seller_id=seller.id, balance=True)
+    send_message = False
+    if len(users) > 0:
+        for employee in users:
             if employee.is_admin:
-                if user.balance >= seller.tariff:
-                    paymet_sum = round(seller.tariff / DAYS[datetime.now().month - 1], 2)
-                    print(round(seller.tariff / DAYS[datetime.now().month - 1], 2))
-                    db_request.create_transaction(user_id=user.id, 
-                                                  sum=paymet_sum, 
-                                                  type=False,
-                                                  tariff=f'{seller.tariff}₽/мес',
-                                                  seller_name=seller.name, 
-                                                  )
-                    db_request.update_seller(id=seller.id, last_payment_date=datetime.now())
-                    print(f'User {user} paid')
+                paymet_sum = round(seller.tariff / DAYS[datetime.now().month - 1], 2)
+                if db_request.get_user(id=employee.user.id).balance >= paymet_sum:
+                    db_request.create_transaction(user_id=employee.user.id, 
+                                                sum=paymet_sum, 
+                                                type=False,
+                                                tariff=f'{seller.tariff}₽/мес',
+                                                seller_name=seller.name, 
+                                                )
+                    db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
+                    print(f'User {employee} paid {paymet_sum}')
+                    continue
+        try:
+            seller = db_request.get_seller(id=seller.id)
+            if (datetime.now() - seller.last_payment_date) > timedelta(hours=23.5):
+                db_request.update_seller(id=seller.id, is_active=False)
+                send_message = True
+        except:
+            pass
+    else:
+        db_request.update_seller(id=seller.id, is_active=False)
+        send_message = True
+    if send_message:
+        text, reply_markup = inline_kb_cancel_seller(seller)
+        for employee in users:
+            user = db_request.get_user(id=employee.user.id)
+            await bot.send_message(chat_id=user.tg_id, text=text, reply_markup=reply_markup)
+                
 
 
 async def regular_check_test_period():
@@ -53,17 +78,25 @@ async def regular_check_test_period():
 
 async def check_test_period(db_request, seller):
     # if there is less than 30 minutes till cancel of test period
-    if (datetime.now() - seller.activation_date) > timedelta(hours=335.5):
+    if (datetime.now() - seller.activation_date) > timedelta(hours=48): #335.5
         db_request.update_seller(id=seller.id, test_period=False, is_active=False)
         # create transaction from first employee who have enough money
-        for employee in db_request.get_employee(seller_id=seller.id):
+        employees = db_request.get_employee(seller_id=seller.id)
+        for employee in employees:
             if employee.is_admin:
                 user = db_request.get_user(id=employee.user.id)
-                if user.balance >= seller.tariff:
-                    paymet_sum = round(seller.tariff / DAYS[datetime.now().month - 1], 2)
+                paymet_sum = round(seller.tariff / DAYS[datetime.now().month - 1], 2)
+                if user.balance >= paymet_sum:
                     db_request.create_transaction(user_id=user.id, sum=paymet_sum, type=False)
-                    db_request.update_seller(id=seller.id, last_payment_date=datetime.now())
+                    db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
+                    print(f'User {employee} paid {paymet_sum}')
                     break
+        if not seller.last_payment_date:
+            db_request.update_seller(id=seller.id, is_active=False)
+            text, reply_markup = inline_kb_cancel_seller(seller)
+            for employee in employees:
+                user = db_request.get_user(id=employee.user.id)
+                await bot.send_message(chat_id=user.tg_id, text=text, reply_markup=reply_markup)
             
     
 

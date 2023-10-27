@@ -472,7 +472,7 @@ def inline_kb_balance(db_request, tg_id : str):
     user = db_request.get_user(tg_id=tg_id)
     sellers = db_request.get_seller(user_id=user.id)
     tariff = sum([s.tariff for s in sellers])
-    text = as_line(Bold(f'💰 Баланс: {user.balance}₽'),
+    text = as_line(Bold(f'💰 Баланс: {round(user.balance, 2)}₽'),
                    '',
                    f'· Ваш тариф: {tariff}₽ / мес',
                    f'· Поставщики: {len(sellers)}',
@@ -521,7 +521,7 @@ def inline_kb_payment(sum : int, payment_link : str):
                    sep='\n'
     )
     text_and_data = [
-        ['Перейти к оплате', 'https://www.google.ru'],
+        ['💳 Перейти к оплате', 'https://www.google.ru'],
         btn_back('balanсe')
     ]
     button_type = ['url', 'callback_data']
@@ -530,7 +530,8 @@ def inline_kb_payment(sum : int, payment_link : str):
 
 def inline_kb_credit(db_request, tg_id : str):
     user = db_request.get_user(tg_id=tg_id)
-    transactions = db_request.get_transaction(user_id=user.id, type=False)
+    transactions = db_request.get_transaction(user_id=user.id, type=True)
+    print(transactions)
     text = as_line(Bold('🧾 Пополнения'),
                    '',
                    sep='\n'
@@ -1649,3 +1650,11 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
             return text.as_html()
         else:
             return False
+
+def inline_kb_cancel_seller(seller):
+    text = f'Поставщик "{seller.name}" больше не активен.\nДля продолжения подписки один из администраторов должен пополнить баланс.'
+    text_and_data = [
+        ['💳 Перейти к оплате', 'https://www.google.ru']
+    ]
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, button_type=['url'])
+    return text, reply_markup
