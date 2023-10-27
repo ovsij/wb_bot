@@ -47,6 +47,7 @@ async def payment(db_request, seller):
         try:
             seller = db_request.get_seller(id=seller.id)
             if (datetime.now() - seller.last_payment_date) > timedelta(hours=23.5):
+                print(datetime.now() - seller.last_payment_date)
                 db_request.update_seller(id=seller.id, is_active=False)
                 send_message = True
         except:
@@ -91,6 +92,8 @@ async def check_test_period(db_request, seller):
                     db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
                     print(f'User {employee} paid {paymet_sum}')
                     break
+                
+        seller = db_request.get_seller(id=seller.id)
         if not seller.last_payment_date:
             db_request.update_seller(id=seller.id, is_active=False)
             text, reply_markup = inline_kb_cancel_seller(seller)

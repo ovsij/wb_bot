@@ -76,6 +76,15 @@ async def addusercoupon(message: Message, db_request: DbRequests, state: FSMCont
             user, _ = db_request.create_transaction(user_id=user.id, sum=coupon.sum, type=True, coupon_name=message.text)
             text, reply_markup = inline_kb_coupon()
             await data['message'].edit_text(text=f'Вы применили купон "{message.text}". \n\nВаш баланс: {user.balance}₽', reply_markup=reply_markup)
+
+            sellers = db_request.get_seller(user_id=user.id)
+            for seller in sellers:
+                if not seller.is_active:
+                    DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+                    paymet_sum = round(seller.tariff / DAYS[datetime.now().month - 1], 2)
+                    db_request.create_transaction(user_id=user.id, sum=paymet_sum, type=False)
+                    db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
+
     else:
         text, reply_markup = inline_kb_coupon()
         await data['message'].edit_text(text=f'Купон с названием "{message.text}" не найден...\n\n' + text, reply_markup=reply_markup)
