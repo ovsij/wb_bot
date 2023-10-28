@@ -280,7 +280,7 @@ async def update_seller(seller, tariff : bool = None):
     except Exception as ex:
         logging.warning(ex)
     """UPDATING ORDERS"""
-    '''try:
+    try:
         logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
         orders = await Statistics.get_orders(db_request, seller)
         new_orders = []
@@ -377,5 +377,5 @@ async def update_seller(seller, tariff : bool = None):
 
 
     end = datetime.now()
-    logging.info(f'{seller.name}[{seller.id}] finished. Time: {end-start}')'''
+    logging.info(f'{seller.name}[{seller.id}] finished. Time: {end-start}')
         
