@@ -2,6 +2,7 @@ import asyncio
 from aiogram.types import FSInputFile
 from aiogram.utils.formatting import *
 from datetime import date, datetime, timedelta
+import logging
 
 from bot.database.functions.db_requests import DbRequests
 from bot import bot
@@ -99,7 +100,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
                    '',
                    sep='\n'
                    )
-    print(warehouses)
+    logging.info(warehouses)
     for name, quantity in warehouses.items():
         text += as_line(f'📦 {name}: {quantity[0]} шт. хватит на {quantity[1]} дн.')
 
@@ -225,7 +226,7 @@ async def update_sellers():
                     tasks.add(task)
 
         await asyncio.gather(*tasks)
-        print('tasks update_sellers created')
+        logging.info('tasks update_sellers created')
         await asyncio.sleep(900)
 
 async def update_seller(seller, tariff : bool = None):
@@ -249,7 +250,7 @@ async def update_seller(seller, tariff : bool = None):
 
     try:
         
-        print(f'{seller.name}[{seller.id}] started stocks. Time: {datetime.now()}')
+        logging.info(f'{seller.name}[{seller.id}] started stocks. Time: {datetime.now()}')
         """UPDATING STOCKS"""
         stocks = await Statistics.get_stocks(token=seller.token)
         for product in stocks:
@@ -277,10 +278,10 @@ async def update_seller(seller, tariff : bool = None):
                                     rating=rating,
                                     reviews=reviews)
     except Exception as ex:
-        print(ex)
+        logging.warning(ex)
     """UPDATING ORDERS"""
     try:
-        print(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
+        logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
         orders = await Statistics.get_orders(db_request, seller)
         new_orders = []
         for order in orders:
@@ -320,13 +321,13 @@ async def update_seller(seller, tariff : bool = None):
                             photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
                             await bot.send_photo(user.tg_id, photo=photo, caption=text)
                         except Exception as ex:
-                            print(ex)
+                            logging.warning(ex)
             
     except Exception as ex:
-        print(ex)
+        logging.warning(ex)
     """UPDATING SALES"""
     try:
-        print(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
+        logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
         sales = await Statistics.get_sales(db_request, seller)
         new_sales = []
         for sale in sales:
@@ -370,11 +371,11 @@ async def update_seller(seller, tariff : bool = None):
                     photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
                     await bot.send_photo(user.tg_id, photo=photo, caption=text)
                 except Exception as ex:
-                    print(ex)
+                    logging.warning(ex)
     except Exception as ex:
-        print(ex)
+        logging.warning(ex)
 
 
     end = datetime.now()
-    print(f'{seller.name}[{seller.id}] finished. Time: {end-start}')
+    logging.info(f'{seller.name}[{seller.id}] finished. Time: {end-start}')
         
