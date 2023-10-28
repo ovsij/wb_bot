@@ -280,7 +280,7 @@ async def update_seller(seller, tariff : bool = None):
     except Exception as ex:
         logging.warning(ex)
     """UPDATING ORDERS"""
-    try:
+    '''try:
         logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
         orders = await Statistics.get_orders(db_request, seller)
         new_orders = []
@@ -306,7 +306,7 @@ async def update_seller(seller, tariff : bool = None):
                                     sticker=order['sticker'],
                                     srid=order['srid'],
                                     orderType=order['orderType'],)
-            #await asyncio.sleep(0.00001)
+            await asyncio.sleep(0.00001)
             if new_order != None:
                 new_orders.append(new_order)
         total_new_orders = len(new_orders)
@@ -358,7 +358,7 @@ async def update_seller(seller, tariff : bool = None):
                                 brand=sale['brand'], 
                                 sticker=sale['sticker'], 
                                 srid=sale['srid'], )
-            #await asyncio.sleep(0.00001)
+            await asyncio.sleep(0.00001)
             if new_sale != None:
                 new_sales.append(new_sale)
         total_new_sales = len(new_sales)
@@ -377,5 +377,5 @@ async def update_seller(seller, tariff : bool = None):
 
 
     end = datetime.now()
-    logging.info(f'{seller.name}[{seller.id}] finished. Time: {end-start}')
+    logging.info(f'{seller.name}[{seller.id}] finished. Time: {end-start}')'''
         
