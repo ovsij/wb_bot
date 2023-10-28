@@ -88,14 +88,18 @@ async def check_test_period(db_request, seller):
                 user = db_request.get_user(id=employee.user.id)
                 paymet_sum = round(seller.tariff / DAYS[datetime.now().month - 1], 2)
                 if user.balance >= paymet_sum:
-                    db_request.create_transaction(user_id=user.id, sum=paymet_sum, type=False)
+                    db_request.create_transaction(user_id=user.id, 
+                                                  sum=paymet_sum, 
+                                                  type=False, 
+                                                  tariff=f'{seller.tariff}₽/мес',
+                                                  seller_name=seller.name, )
                     db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
                     print(f'User {employee} paid {paymet_sum}')
                     break
-                
+
         seller = db_request.get_seller(id=seller.id)
         if not seller.last_payment_date:
-            db_request.update_seller(id=seller.id, is_active=False)
+            #db_request.update_seller(id=seller.id, is_active=False)
             text, reply_markup = inline_kb_cancel_seller(seller)
             for employee in employees:
                 user = db_request.get_user(id=employee.user.id)
