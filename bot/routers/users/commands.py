@@ -127,8 +127,8 @@ async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests
 
     CONNECTIONS = 8
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
-        future_to_url = (executor.submit(get_request_classic, db_request, keyword, start, r_session) for keyword in keywords[:10000])
+    with concurrent.futures.ProcessPoolExecutor(max_workers=CONNECTIONS) as executor:
+        future_to_url = [executor.submit(get_request_classic, db_request, keyword, start, r_session) for keyword in keywords[:10000]]
         for future in tqdm(concurrent.futures.as_completed(future_to_url), total=len(keywords[:10000])):
             try:
                 data = future.result() 
