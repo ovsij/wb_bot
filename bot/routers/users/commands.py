@@ -125,18 +125,18 @@ async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests
     tasks = set()
     #for keyword in keywords[:10000]:
 
-    CONNECTIONS = 8
+    CONNECTIONS = 100
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=CONNECTIONS) as executor:
-        future_to_url = [executor.submit(get_request_classic, db_request, keyword, start, r_session) for keyword in keywords[:10000]]
-        for future in concurrent.futures.as_completed(future_to_url):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
+        future_to_url = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
+        for future in tqdm(concurrent.futures.as_completed(future_to_url), total=len(keywords[:100000])):
             #try:
             data = future.result() 
             db_request.update_keyword(id=data['keyword'], search=data['search'], total=data['total'])
             #except Exception as exc:   
-            #    print(exc)   
+            #    print(exc) 
                 
-                
+    
             
         #await get_request(db_request, keyword, start, session)
         #tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
@@ -174,7 +174,7 @@ async def get_request(db_request, keyword, start, session):
     db_request.update_keyword(id=keyword[0], search=products, total=total)
 
 
-def get_request_classic(db_request, keyword, start, r_session):
+def get_request_classic(keyword):
     
     url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
     params_first = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
