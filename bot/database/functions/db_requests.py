@@ -662,6 +662,7 @@ class DbRequests:
         for i in range(len(df)):
             try:
                 requests = int(df.iloc[i]['requests'])
+                
                 KeyWord(keyword=str(df.iloc[i]['keyword']), requests=requests)
             except Exception as ex:
                 print(ex)

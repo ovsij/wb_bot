@@ -105,8 +105,10 @@ import aiohttp
 from tqdm import tqdm
 import concurrent.futures
 import requests
-
-
+@user_commands_router.message(Command("create"))
+async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
+    db_request.create_keywords()
+    
 @user_commands_router.message(Command("go"))
 async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
     print('start')
