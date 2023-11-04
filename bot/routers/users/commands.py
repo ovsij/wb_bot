@@ -107,8 +107,10 @@ import concurrent.futures
 import requests
 @user_commands_router.message(Command("create"))
 async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
+    print('create keywords')
     db_request.create_keywords()
-    
+    print('finish create keywords')
+
 @user_commands_router.message(Command("go"))
 async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
     print('start')
@@ -123,7 +125,7 @@ async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests
     tasks = set()
     #for keyword in keywords[:10000]:
 
-    CONNECTIONS = 20
+    CONNECTIONS = 30
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         future_to_url = (executor.submit(get_request_classic, db_request, keyword, start, r_session) for keyword in keywords[:1000])
