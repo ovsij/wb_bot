@@ -654,4 +654,29 @@ class DbRequests:
             query = select((s.id, s.date, s.priceWithDisc, s.srid, s.nmId, s.subject, s.brand, s.supplierArticle, s.regionName, s.warehouseName) for s in Sale if s.product.seller in sellers and s.saleID.startswith(type)).order_by(lambda: desc(s.date))[:]
             return [{'date': q[1], 'priceWithDisc': q[2], 'srid': q[3], 'nmId': q[4], 'subject': q[5], 'brand': q[6], 'supplierArticle': q[7], 'oblast': q[8], 'warehouseName': q[9]} for q in query]
 
-        
+    """KeyWord requests"""
+    @db_session()
+    def create_keywords(self):
+        import pandas as pd
+        df = pd.read_csv('bot/database/requests.csv', names=['keyword', 'requests'])
+        for i in range(len(df)):
+            try:
+                requests = int(df.iloc[i]['requests'])
+                KeyWord(keyword=str(df.iloc[i]['keyword']), requests=requests)
+            except Exception as ex:
+                print(ex)
+    
+    @db_session()
+    def update_keyword(self, id, search, total):
+        keyword_for_update = KeyWord[id]
+        keyword_for_update.search = search
+        keyword_for_update.total = total
+        flush()
+
+
+    @db_session()
+    def get_keywords(self, product_card=None):
+        if product_card:
+            return select(k for k in KeyWord if f' {k.keyword} ' in product_card or f'"{k.keyword} ' in product_card or f' {k.keyword}"' in product_card or f'{k.keyword} ' in product_card or f' {k.keyword}' in product_card and len(k.keyword) > 1).order_by(lambda: desc(k.requests))[:]
+        else:
+            return select([k.id, k.keyword, k.requests] for k in KeyWord).order_by(lambda: k.id)[:]

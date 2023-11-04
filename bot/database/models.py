@@ -228,3 +228,12 @@ class Transaction(db.Entity):
     bill_number = Optional(int)
     bill_link = Optional(str, nullable=True)
     datetime = Required(datetime, default=datetime.now())
+
+
+class KeyWord(db.Entity):
+    __table_name__ = "keyword"
+
+    id = PrimaryKey(int, auto=True)
+    keyword = Required(str)
+    requests = Optional(int)
+    search = Optional(Json)

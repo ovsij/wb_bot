@@ -192,7 +192,8 @@ def inline_kb_settings(db_request, tg_id : str):
     text_and_data = []
     sellers = db_request.get_seller(user_id=db_request.get_user(tg_id=tg_id).id)
     for seller in sellers:
-        text_and_data.append([seller.name, f'settings_{seller.id}'])
+        is_active = '' if seller.is_active else '⚠️'
+        text_and_data.append([f"{is_active}{seller.name}", f'settings_{seller.id}'])
     text_and_data.append(['➕ Добавить продавца', 'add_seller'])
     text_and_data.append(btn_back('my'))
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
@@ -1461,3 +1462,12 @@ def inline_kb_cancel_seller(seller):
     ]
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, button_type=['url'])
     return text, reply_markup
+
+
+def inline_kb_search_keywords():
+    text = as_line(Bold('🔍 Проверка артикула в поиске WB'),
+                   '',
+                   '📝 Введите ссылку на карточку товара или артикул WB:',
+                   sep='\n')
+    return text.as_html()
+    

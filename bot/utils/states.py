@@ -12,3 +12,4 @@ class Form(StatesGroup):
     reports_timedelta = State()
     search = State()
     my_products = State()
+    search_keywords = State()

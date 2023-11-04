@@ -1,3 +1,5 @@
+import asyncio
+
 from aiogram.types import Message
 from aiogram import Router
 from aiogram.filters import Command
@@ -83,97 +85,115 @@ async def cmd_news(message: Message, db_request: DbRequests):
 
 @user_commands_router.message(Command("stock"))
 async def cmd_stocks(message: Message, db_request: DbRequests):
-    """for seller in db_request.get_seller(user_id=db_request.get_user(tg_id=str(message.from_user.id)).id):
-        stocks = Statistics.get_stocks(token=seller.token)
-        for product in stocks:
-            rating, reviews = WbParser.get_rating(article=product['nmId'])
-            db_request.create_product(seller_id=seller.id,
-                                      supplierArticle=product['supplierArticle'],
-                                      nmId=product['nmId'],
-                                      barcode=product['barcode'],
-                                      category=product['category'],
-                                      subject=product['subject'],
-                                      brand=seller.name,
-                                      techSize=product['techSize'],
-                                      price=product['Price'],
-                                      discount=product['Discount'],
-                                      isSupply=product['isSupply'],
-                                      isRealization=product['isRealization'],
-                                      SCCode=product['SCCode'],
-                                      warehouseName=product['warehouseName'],
-                                      quantity=product['quantity'],
-                                      inWayToClient=product['inWayToClient'],
-                                      inWayFromClient=product['inWayFromClient'],
-                                      quantityFull=product['quantityFull'],
-                                      rating=rating,
-                                      reviews=reviews)"""
-            
     text, reply_markup = inline_kb_stocks(db_request, tg_id=str(message.from_user.id))
     await message.answer(text=text, reply_markup=reply_markup)
     await message.delete()    
 
 @user_commands_router.message(Command("reports"))
 async def cmd_stocks(message: Message, db_request: DbRequests):
-    
-    """#await message.delete()
-    for seller in db_request.get_seller(user_id=db_request.get_user(tg_id=str(message.from_user.id)).id):
-        orders = Statistics.get_orders(db_request, seller)
-        start = datetime.now()
-        db_orders = [db_request.create_order(gNumber=order['gNumber'],
-                                    date=order['date'],
-                                    lastChangeDate=order['lastChangeDate'],
-                                    supplierArticle=order['supplierArticle'],
-                                    techSize=order['techSize'],
-                                    barcode=order['barcode'],
-                                    totalPrice=order['totalPrice'],
-                                    discountPercent=order['discountPercent'],
-                                    warehouseName=order['warehouseName'],
-                                    oblast=order['oblast'],
-                                    incomeID=order['incomeID'],
-                                    odid=order['odid'],
-                                    nmId=order['nmId'],
-                                    subject=order['subject'],
-                                    category=order['category'],
-                                    brand=order['brand'],
-                                    isCancel=order['isCancel'],
-                                    cancel_dt=order['cancel_dt'],
-                                    sticker=order['sticker'],
-                                    srid=order['srid'],
-                                    orderType=order['orderType'],) for order in orders]
-        end = datetime.now()
-        print(f'orders {end-start}')
-        sales = Statistics.get_sales(db_request, seller)
-        for sale in sales:
-            db_request.create_sale(gNumber=sale['gNumber'],
-                                   date=sale['date'],
-                                   lastChangeDate=sale['lastChangeDate'],
-                                   supplierArticle=sale['supplierArticle'],
-                                   techSize=sale['techSize'],
-                                   barcode=sale['barcode'],
-                                   totalPrice=sale['totalPrice'],
-                                   discountPercent=sale['discountPercent'], 
-                                   isSupply=sale['isSupply'],
-                                   isRealization=sale['isRealization'],
-                                   warehouseName=sale['warehouseName'], 
-                                   countryName=sale['countryName'], 
-                                   oblastOkrugName=sale['oblastOkrugName'], 
-                                   regionName=sale['regionName'], 
-                                   incomeID=sale['incomeID'], 
-                                   saleID=sale['saleID'], 
-                                   odid=sale['odid'], 
-                                   spp=sale['spp'], 
-                                   forPay=sale['forPay'], 
-                                   finishedPrice=sale['finishedPrice'], 
-                                   priceWithDisc=sale['priceWithDisc'], 
-                                   nmId=sale['nmId'], 
-                                   subject=sale['subject'], 
-                                   category=sale['category'], 
-                                   brand=sale['brand'], 
-                                   sticker=sale['sticker'], 
-                                   srid=sale['srid'], )
-    start = datetime.now()"""
     text, reply_markup = inline_kb_reports(db_request, tg_id=str(message.from_user.id))
     await message.answer(text=text, reply_markup=reply_markup)
-    #end = datetime.now()
-    #print(f'Finish total: {end-start}')
+
+@user_commands_router.message(Command("search"))
+async def cmd_stocks(message: Message, state: FSMContext):
+    await state.set_state(Form.search_keywords)
+    text = inline_kb_search_keywords()
+    await message.answer(text=text, parse_mode='HTML')
+
+
+import aiohttp
+from tqdm import tqdm
+import concurrent.futures
+import requests
+
+
+@user_commands_router.message(Command("go"))
+async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
+    print('start')
+    keywords = db_request.get_keywords()
+    print('keywords extracted from db')
+    
+    start = datetime.now()
+    #async with aiohttp.ClientSession(trust_env=True) as session:
+    session = aiohttp.ClientSession(trust_env=True)
+    r_session = requests.Session()
+
+    tasks = set()
+    #for keyword in keywords[:10000]:
+
+    CONNECTIONS = 20
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
+        future_to_url = (executor.submit(get_request_classic, db_request, keyword, start, r_session) for keyword in keywords[:1000])
+        for future in tqdm(concurrent.futures.as_completed(future_to_url), total=len(keywords[:1000])):
+            try:
+                data = future.result() 
+                db_request.update_keyword(id=data['keyword'], search=data['search'], total=data['total'])
+            except Exception as exc:   
+                print(exc)   
+                
+                
+            
+        #await get_request(db_request, keyword, start, session)
+        #tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
+    #await asyncio.gather(*tasks)
+    #print('tasks created')
+    #await session.close()
+    end = datetime.now()
+    print(f'Time {end-start}')
+            
+
+async def get_request(db_request, keyword, start, session):
+    
+    url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
+    params_first = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
+    async with session.get(url, params=params_first, ssl=False) as response:
+        result = await response.json(content_type='text/plain')
+        total = result['data']['total']
+        print(total)
+    print(keyword)
+    products = []
+    for page in range(1, 4):
+        params_second = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[1]), 'resultset': 'catalog', 'sort':'popular', 'suppressSpellcheck': 'false'}
+        async with session.get(url, params=params_second, ssl=False) as response:
+            if response.status == 200:
+                try:
+                    result = await response.json(content_type='text/plain')
+                    page_products = [p['id'] for p in result['data']['products']]
+                    products.append({page: page_products})
+                    print(page)
+                except:
+                    print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+            else:
+                print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    print(products)
+    db_request.update_keyword(id=keyword[0], search=products, total=total)
+
+
+def get_request_classic(db_request, keyword, start, r_session):
+    
+    url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
+    params_first = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
+    response = requests.get(url, params=params_first)
+    result = response.json()
+    total = result['data']['total']
+    #print(keyword)
+    #print(total)
+    
+    products = []
+    for page in range(1, 4):
+        params_second = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[1]), 'resultset': 'catalog', 'sort':'popular', 'suppressSpellcheck': 'false'}
+        response = requests.get(url, params=params_second)
+        if response.status_code == 200:
+            try:
+                result = response.json()
+                page_products = [p['id'] for p in result['data']['products']]
+                products.append({page: page_products})
+                #print(page)
+            except:
+                print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        else:
+            print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    #print(products)
+    return {'keyword': keyword[0], 'search': products, 'total': total}
     
