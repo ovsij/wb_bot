@@ -672,7 +672,7 @@ class DbRequests:
         keyword_for_update = KeyWord[id]
         keyword_for_update.search = search
         keyword_for_update.total = total
-        flush()
+        #flush()
 
 
     @db_session()
