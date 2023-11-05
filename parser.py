@@ -17,14 +17,14 @@ def main():
     start = datetime.now()
     #async with aiohttp.ClientSession(trust_env=True) as session:
     #session = aiohttp.ClientSession(trust_env=True)
-    r_session = requests.Session()
+    session = requests.Session()
 
     #tasks = set()
     #for keyword in keywords[:10000]:
 
-    CONNECTIONS = 20
+    CONNECTIONS = 50
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=CONNECTIONS) as executor:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         futures = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
         for future in tqdm(concurrent.futures.as_completed(futures), total=len(keywords[:100000])):
             try:
