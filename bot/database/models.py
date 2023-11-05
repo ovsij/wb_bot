@@ -237,3 +237,4 @@ class KeyWord(db.Entity):
     keyword = Required(str)
     requests = Optional(int, nullable=True)
     search = Optional(Json, nullable=True)
+    total = Optional(int, nullable=True)
