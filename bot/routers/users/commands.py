@@ -138,11 +138,11 @@ async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         future_to_url = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
         for future in tqdm(concurrent.futures.as_completed(future_to_url), total=len(keywords[:100000])):
-            #try:
-            data = future.result() 
-            db_request.update_keyword(id=data['keyword'], search=data['search'], total=data['total'])
-            #except Exception as exc:   
-            #    print(exc) 
+            try:
+                data = future.result() 
+                db_request.update_keyword(id=data['keyword'], search=data['search'], total=data['total'])
+            except Exception as exc:   
+                print(exc) 
                 
     
             
