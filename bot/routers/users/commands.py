@@ -133,7 +133,7 @@ async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests
     tasks = set()
     #for keyword in keywords[:10000]:
 
-    CONNECTIONS = 100
+    CONNECTIONS = 4
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         future_to_url = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
