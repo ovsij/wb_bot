@@ -22,7 +22,7 @@ def main():
     #tasks = set()
     #for keyword in keywords[:10000]:
 
-    CONNECTIONS = 50
+    CONNECTIONS = 20
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         futures = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
