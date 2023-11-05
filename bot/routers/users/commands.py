@@ -111,6 +111,14 @@ async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests
     db_request.create_keywords()
     print('finish create keywords')
 
+@user_commands_router.message(Command("uncreate"))
+async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
+    print('uncreate keywords')
+    keywords = db_request.get_keywords()
+    for k in keywords:
+        db_request.update_keyword(id=k.id, search=None, total=None)
+    print('finish uncreate keywords')
+
 @user_commands_router.message(Command("go"))
 async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
     print('start')

@@ -235,5 +235,5 @@ class KeyWord(db.Entity):
 
     id = PrimaryKey(int, auto=True)
     keyword = Required(str)
-    requests = Optional(int)
-    search = Optional(Json)
+    requests = Optional(int, nullable=True)
+    search = Optional(Json, nullable=True)
