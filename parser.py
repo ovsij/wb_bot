@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 import concurrent.futures
 import requests
+import time
 from tqdm import tqdm
 
 
@@ -22,7 +23,7 @@ def main():
     #tasks = set()
     #for keyword in keywords[:10000]:
 
-    CONNECTIONS = 20
+    CONNECTIONS = 50
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         futures = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
@@ -32,6 +33,9 @@ def main():
                 db_request.update_keyword(id=data['keyword'], search=data['search'], total=data['total'])
             except Exception as exc:   
                 print(exc) 
+                time.sleep(60)
+                print('waiting for 60 seconds')
+
 
 
 def get_request_classic(keyword):
