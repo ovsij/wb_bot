@@ -26,7 +26,7 @@ async def main():
         print(f'start: {(i - 1) * 10000} : {i * 10000}')
         print(f'time: {time}')
         tasks = set()
-        for keyword in keywords[(i - 1) * 100000:i * 10000]:
+        for keyword in keywords[(i - 1) * 10000:i * 10000]:
             tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
         await asyncio.gather(*tasks)
 
