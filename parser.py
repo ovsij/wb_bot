@@ -76,8 +76,10 @@ async def get_request(db_request, keyword, start, session):
                     #print(page)
                 except:
                     print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    await asyncio.sleep(5)
             else:
                 print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                await asyncio.sleep(5)
     db_request.update_keyword(id=keyword[0], search=products, total=total)
 
 
