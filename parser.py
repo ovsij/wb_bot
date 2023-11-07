@@ -21,7 +21,7 @@ async def main():
     r_session = requests.Session()
 
     
-    for i in range(3, 100):
+    for i in range(60, 100):
         time = datetime.now()
         print(f'start: {(i - 1) * 10000} : {i * 10000}')
         print(f'time: {time}')
@@ -75,10 +75,10 @@ async def get_request(db_request, keyword, start, session):
                     products.append({page: page_products})
                     #print(page)
                 except:
-                    print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    #print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                     await asyncio.sleep(5)
             else:
-                print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                #print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 await asyncio.sleep(5)
     db_request.update_keyword(id=keyword[0], search=products, total=total)
 
