@@ -22,6 +22,7 @@ async def main():
 
     
     for i in range(3, 100):
+        print(f'start: {(i - 1) * 100000:i * 10000}, time: {datetime.now()}')
         tasks = set()
         for keyword in keywords[(i - 1) * 100000:i * 10000]:
             tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
@@ -56,8 +57,8 @@ async def get_request(db_request, keyword, start, session):
     async with session.get(url, params=params_first, ssl=False) as response:
         result = await response.json(content_type='text/plain')
         total = result['data']['total']
-        print(total)
-    print(keyword)
+        #print(total)
+    #print(keyword)
     products = []
     for page in range(1, 4):
         params_second = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[1]), 'resultset': 'catalog', 'sort':'popular', 'suppressSpellcheck': 'false'}
@@ -67,7 +68,7 @@ async def get_request(db_request, keyword, start, session):
                     result = await response.json(content_type='text/plain')
                     page_products = [p['id'] for p in result['data']['products']]
                     products.append({page: page_products})
-                    print(page)
+                    #print(page)
                 except:
                     print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             else:
