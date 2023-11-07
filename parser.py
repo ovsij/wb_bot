@@ -23,7 +23,7 @@ async def main():
     
     for i in range(3, 100):
         time = datetime.now()
-        print(f'start: {(i - 1) * 100000} : {i * 10000}')
+        print(f'start: {(i - 1) * 10000} : {i * 10000}')
         print(f'time: {time}')
         tasks = set()
         for keyword in keywords[(i - 1) * 100000:i * 10000]:
