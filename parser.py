@@ -75,9 +75,9 @@ async def get_request(db_request, keyword, start, session):
                     products.append({page: page_products})
                     #print(page)
                 except:
-                    print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             else:
-                print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                print(f'{keyword[0} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
     db_request.update_keyword(id=keyword[0], search=products, total=total)
 
 
