@@ -130,10 +130,14 @@ async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests
     session = aiohttp.ClientSession(trust_env=True)
     r_session = requests.Session()
 
-    tasks = set()
-    #for keyword in keywords[:10000]:
+    
+    for i in range(1, 100):
+        tasks = set()
+        for keyword in keywords[(i - 1) * 100000:i * 10000]:
+            tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
+        await asyncio.gather(*tasks)
 
-    CONNECTIONS = 4
+    """CONNECTIONS = 4
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         future_to_url = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
@@ -142,7 +146,7 @@ async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests
                 data = future.result() 
                 db_request.update_keyword(id=data['keyword'], search=data['search'], total=data['total'])
             except Exception as exc:   
-                print(exc) 
+                print(exc) """
                 
     
             
@@ -178,7 +182,6 @@ async def get_request(db_request, keyword, start, session):
                     print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
             else:
                 print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    print(products)
     db_request.update_keyword(id=keyword[0], search=products, total=total)
 
 
