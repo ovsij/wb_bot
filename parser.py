@@ -57,8 +57,11 @@ async def get_request(db_request, keyword, start, session):
     url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
     params_first = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
     async with session.get(url, params=params_first, ssl=False) as response:
-        result = await response.json(content_type='text/plain')
-        total = result['data']['total']
+        try:
+            result = await response.json(content_type='text/plain')
+            total = result['data']['total']
+        except:
+            total = 0
         #print(total)
     #print(keyword)
     products = []
