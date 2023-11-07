@@ -23,11 +23,11 @@ def main():
     #tasks = set()
     #for keyword in keywords[:10000]:
 
-    CONNECTIONS = 50
+    CONNECTIONS = 100
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
-        futures = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
-        for future in tqdm(concurrent.futures.as_completed(futures), total=len(keywords[:100000])):
+        futures = [executor.submit(get_request_classic, keyword) for keyword in keywords[20000:100000]]
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(keywords[20000:100000])):
             try:
                 data = future.result() 
                 db_request.update_keyword(id=data['keyword'], search=data['search'], total=data['total'])
