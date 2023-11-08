@@ -43,7 +43,10 @@ async def admin_callback_query_handler(callback_query: types.CallbackQuery, stat
                 users = db_request.get_user(date='week')
 
             for user in users:
-                await bot.send_message(chat_id=user.tg_id, text=data['text'])
+                try:
+                    await bot.send_message(chat_id=user.tg_id, text=data['text'])
+                except:
+                    pass
 
             await callback_query.message.answer(text=data['text'] + '\n\nСообщение отправлено', reply_markup=InlineConstructor.create_kb(text_and_data=[['Скрыть', 'delete_msg']]))
             await callback_query.message.delete()
