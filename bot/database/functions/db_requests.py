@@ -676,8 +676,10 @@ class DbRequests:
 
 
     @db_session()
-    def get_keywords(self, product_card=None):
+    def get_keywords(self, article=None, product_card=None):
         if product_card:
             return select(k for k in KeyWord if f' {k.keyword} ' in product_card or f'"{k.keyword} ' in product_card or f' {k.keyword}"' in product_card or f'{k.keyword} ' in product_card or f' {k.keyword}' in product_card and len(k.keyword) > 1).order_by(lambda: desc(k.requests))[:]
+        elif article:
+            return select(k for k in KeyWord if article in (list(p.values())[0] for p in list(k.search)))[:]
         else:
             return select([k.id, k.keyword, k.requests] for k in KeyWord).order_by(lambda: k.id)[:]

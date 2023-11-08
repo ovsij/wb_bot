@@ -31,9 +31,9 @@ async def on_startup(dispatcher: Dispatcher):
 
     routers.register_all_routes(dispatcher, config)
 
-    asyncio.create_task(update_sellers())
-    asyncio.create_task(regular_payment())
-    asyncio.create_task(regular_check_test_period())
+    #asyncio.create_task(update_sellers())
+    #asyncio.create_task(regular_payment())
+    #asyncio.create_task(regular_check_test_period())
     
 
 # Запуск бота

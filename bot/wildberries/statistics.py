@@ -45,6 +45,8 @@ class Statistics:
                     result = await response.json()
                     return result
                 else:
+                    if '401 Unauthorized' in response:
+                        pass
                     print('orders list is empty')
                     print(seller.token)
                     print(response)
