@@ -46,6 +46,7 @@ class Statistics:
                     return result
                 else:
                     print('orders list is empty')
+                    print(seller.token)
                     print(response)
                     await asyncio.sleep(10)
                     return await Statistics.get_orders(db_request, seller)
