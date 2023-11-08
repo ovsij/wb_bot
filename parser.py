@@ -1,34 +1,34 @@
 import aiohttp, asyncio
 from datetime import datetime
 import concurrent.futures
+import logging
 import requests
 import time
 from tqdm import tqdm
 
 
+
 from bot.database.functions.db_requests import DbRequests
 
+logger = logging.getLogger(__name__)
 
 async def main():
-    print('start')
+    logger.info('start')
     db_request = DbRequests()
     keywords = db_request.get_keywords()
-    print('keywords extracted from db')
+    logger.info('keywords extracted from db')
     
     start = datetime.now()
-    #async with aiohttp.ClientSession(trust_env=True) as session:
-
     session = aiohttp.ClientSession(trust_env=True)
     for i in range(1, 100):
-        print(f'i: {i}')
+        logger.info(f'i: {i}')
         time = datetime.now()
-        print(f'start: {(i - 1) * 10000} : {i * 10000}')
-        print(f'time: {time}')
+        logger.info(f'start: {(i - 1) * 10000} : {i * 10000}')
+        logger.info(f'time: {time}')
         tasks = set()
         for keyword in keywords[(i - 1) * 10000:i * 10000]:
             tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
         reqults = await asyncio.gather(*tasks)
-        #await 
     session.close()
 
     """CONNECTIONS = 4
@@ -50,7 +50,7 @@ async def main():
     #print('tasks created')
     
     end = datetime.now()
-    print(f'Time {end-start}')
+    logger.info(f'Time {end-start}')
             
 
 async def get_request(db_request, keyword, start, session):
