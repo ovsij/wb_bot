@@ -680,7 +680,9 @@ class DbRequests:
         if product_card:
             return select(k for k in KeyWord if f' {k.keyword} ' in product_card or f'"{k.keyword} ' in product_card or f' {k.keyword}"' in product_card or f'{k.keyword} ' in product_card or f' {k.keyword}' in product_card and len(k.keyword) > 1).order_by(lambda: desc(k.requests))[:]
         elif article:
-            import json
-            return select(k for k in KeyWord if article in (p for p in json.loads(k.search)))[:]
+            res = select(k for k in KeyWord)[:]
+            print(res[0].search)
+            print(type(res[0].search))
+            return res
         else:
             return select([k.id, k.keyword, k.requests] for k in KeyWord).order_by(lambda: k.id)[:]
