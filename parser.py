@@ -21,7 +21,7 @@ async def main():
     r_session = requests.Session()
 
     
-    for i in range(60, 100):
+    for i in range(90, 100):
         time = datetime.now()
         print(f'start: {(i - 1) * 10000} : {i * 10000}')
         print(f'time: {time}')
