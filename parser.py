@@ -9,22 +9,21 @@ from tqdm import tqdm
 
 
 from bot.database.functions.db_requests import DbRequests
-
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 async def main():
-    logger.info('start')
+    logging.info('start')
     db_request = DbRequests()
     keywords = db_request.get_keywords()
-    logger.info('keywords extracted from db')
+    logging.info('keywords extracted from db')
     
     start = datetime.now()
     session = aiohttp.ClientSession(trust_env=True)
     for i in range(1, 100):
-        logger.info(f'i: {i}')
+        logging.info(f'i: {i}')
         time = datetime.now()
-        logger.info(f'start: {(i - 1) * 10000} : {i * 10000}')
-        logger.info(f'time: {time}')
+        logging.info(f'start: {(i - 1) * 10000} : {i * 10000}')
+        logging.info(f'time: {time}')
         tasks = set()
         for keyword in keywords[(i - 1) * 10000:i * 10000]:
             tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
@@ -50,7 +49,7 @@ async def main():
     #print('tasks created')
     
     end = datetime.now()
-    logger.info(f'Time {end-start}')
+    logging.info(f'Time {end-start}')
             
 
 async def get_request(db_request, keyword, start, session):
@@ -95,8 +94,8 @@ if __name__ == '__main__':
         loop = None
 
     if loop and loop.is_running():
-        print('Async event loop already running. Adding coroutine to the event loop.')
+        logging.info('Async event loop already running. Adding coroutine to the event loop.')
         tsk = loop.create_task(main())
     else:
-        print('Starting new event loop')
+        logging.info('Starting new event loop')
         result = asyncio.run(main())
