@@ -668,10 +668,16 @@ class DbRequests:
                 print(ex)
     
     @db_session()
-    def update_keyword(self, id, search, total):
+    def update_keyword(self, id, search, total, page):
         keyword_for_update = KeyWord[id]
-        keyword_for_update.search = search
         keyword_for_update.total = total
+        if page == 1:
+            keyword_for_update.search_1 = search
+        if page == 2:
+            keyword_for_update.search_2 = search
+        if page == 3:
+            keyword_for_update.search_3 = search
+        
         #flush()
 
 
