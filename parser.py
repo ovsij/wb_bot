@@ -54,7 +54,7 @@ async def main():
 
 async def get_request(db_request, keyword, start, session):
     url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
-    params_first = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
+    params_first = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
     async with session.get(url, params=params_first, ssl=False) as response:
         try:
             result = await response.json(content_type='text/plain')
@@ -67,7 +67,7 @@ async def get_request(db_request, keyword, start, session):
     for page in range(1, 4):
         #print(page)
         
-        params_second = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[1]), 'resultset': 'catalog', 'sort':'popular', 'suppressSpellcheck': 'false'}
+        params_second = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[1]), 'resultset': 'catalog', 'sort':'popular', 'spp': 26, 'suppressSpellcheck': 'false'}
         async with session.get(url, params=params_second, ssl=False) as response:
             if response.status == 200:
                 try:
@@ -85,7 +85,41 @@ async def get_request(db_request, keyword, start, session):
         for prod in products:
             db_request.update_keyword(id=keyword[0], search=prod, total=total, page=products.index(prod)+1)
         
-
+async def main_1():
+    query = 'свитер женский'
+    session = aiohttp.ClientSession(trust_env=True)
+    url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
+    #params_first = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
+    #async with session.get(url, params=params_first, ssl=False) as response:
+    #    try:
+    #        result = await response.json(content_type='text/plain')
+    #        total = result['data']['total']
+    #    except:
+    #        total = 0
+        #print(total)
+    #print(keyword)
+    products = []
+    for page in range(1, 4):
+        #print(page)
+        
+        params_second = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':query, 'resultset': 'catalog', 'sort':'popular', 'spp': 26, 'suppressSpellcheck': 'false'}
+        async with session.get(url, params=params_second, ssl=False) as response:
+            if response.status == 200:
+                try:
+                    result = await response.json(content_type='text/plain')
+                    page_products = [p['id'] for p in result['data']['products']]
+                    products.append(page_products)
+                    #print(page)
+                except:
+                    #print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                    await asyncio.sleep(5)
+            else:
+                #print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+                await asyncio.sleep(5)
+    for p in products:
+        print(len(p))
+        print(p)
+    await session.close()
 
 if __name__ == '__main__':
     try:
