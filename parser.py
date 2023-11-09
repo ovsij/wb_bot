@@ -28,7 +28,7 @@ async def main():
         for keyword in keywords[(i - 1) * 10000:i * 10000]:
             tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
         reqults = await asyncio.gather(*tasks)
-    session.close()
+    await session.close()
 
     """CONNECTIONS = 4
 
