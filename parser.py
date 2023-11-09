@@ -18,7 +18,7 @@ async def main():
     db_request.delete_keywords(is_today=False)
     logging.info('удалить вчерашние запросы - DONE')
     # сделать сегодняшние вчерашними
-    db_request.update_keywords(is_today=True)
+    db_request.update_keyword(is_today=True)
     logging.info('сделать сегодняшние вчерашними - DONE')
     # создать сегодняшние
     db_request.create_keywords()
