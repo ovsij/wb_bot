@@ -687,7 +687,7 @@ class DbRequests:
             return select(k for k in KeyWord if f' {k.keyword} ' in product_card or f'"{k.keyword} ' in product_card or f' {k.keyword}"' in product_card or f'{k.keyword} ' in product_card or f' {k.keyword}' in product_card and len(k.keyword) > 1).order_by(lambda: desc(k.requests))[:]
         elif article:
             print('article')
-            res = select((k.keyword, k.search) for k in KeyWord if article in (list(p.values()) for p in k.search))[:]
+            res = select((k.keyword, k.search) for k in KeyWord if int(article) in k.search_1 or int(article) in k.search_2 or int(article) in k.search_3)[:]
             print(res[0][1])
             print(type(res[0][1]))
             return res
