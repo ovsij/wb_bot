@@ -1,5 +1,5 @@
 import asyncio, aiohttp
-from aiogram.types import Message
+from aiogram.types import Message, FSInputFile
 from aiogram import Router
 from aiogram.fsm.context import FSMContext
 from aiogram.enums.parse_mode import ParseMode
@@ -147,12 +147,17 @@ async def reports_search_keywords(message: Message, db_request: DbRequests, stat
     print(article)
     if len(article) > 0:
         keywords = db_request.get_keywords(article=article)
-        print(keywords)
-        
-        #search_results.append({list(keyword.keys())[0]: [page_id, index, list(keyword.values())[0], total]})
-                            
-            
-        #await CreateTelegraph.create_page(requests=search_results, article=article)
+        search_results = []
+        for keyword in keywords:
+            page_id = 1 if article in keyword.serch_1 else 2 if article in keyword.serch_2 else 3
+            page_list = keyword.serch_1 if page_id == 1 else keyword.serch_2 if page_id == 2 else keyword.search_3
+            index = page_list.index(article) + 1
+            search_results.append({keyword.keyword: [page_id, index, list(keyword.values())[0], keyword.total]})
+
+        await CreateTelegraph.create_page(requests=keywords, article=article)
+
+        await message.answer_document(FSInputFile('test.html'))
+
     end = datetime.now()
     print(f'time: {end-start}')
                     
