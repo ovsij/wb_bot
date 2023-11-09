@@ -155,7 +155,7 @@ async def reports_search_keywords(message: Message, db_request: DbRequests, stat
             index = page_list.index(int(article)) + 1
             search_results.append({keyword.keyword: [page_id, index, keyword.requests, keyword.total]})
 
-        await CreateTelegraph.create_page(requests=keywords, article=article)
+        await CreateTelegraph.create_page(requests=search_results, article=article)
 
         await message.answer_document(FSInputFile('test.html'))
 
