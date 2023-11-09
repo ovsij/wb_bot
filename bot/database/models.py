@@ -240,3 +240,4 @@ class KeyWord(db.Entity):
     search_2 = Optional(IntArray, nullable=True)
     search_3 = Optional(IntArray, nullable=True)
     total = Optional(int, nullable=True)
+    is_today = Optional(bool, default=True)

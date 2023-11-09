@@ -668,24 +668,37 @@ class DbRequests:
                 print(ex)
     
     @db_session()
-    def update_keyword(self, id, search, total, page):
-        keyword_for_update = KeyWord[id]
-        keyword_for_update.total = total
-        if page == 1:
-            keyword_for_update.search_1 = search
-        if page == 2:
-            keyword_for_update.search_2 = search
-        if page == 3:
-            keyword_for_update.search_3 = search
+    def update_keyword(self, id=None, search=None, total=None, page=None, is_today=None):
         
-        #flush()
+        if is_today:
+            for k in select(k for k in KeyWord)[:]:
+                k.is_today = False
+        else:
+            keyword_for_update = KeyWord[id]
+            keyword_for_update.total = total
+            if page == 1:
+                keyword_for_update.search_1 = search
+            if page == 2:
+                keyword_for_update.search_2 = search
+            if page == 3:
+                keyword_for_update.search_3 = search
 
 
     @db_session()
-    def get_keywords(self, article=None, product_card=None):
+    def get_keywords(self, article=None, product_card=None, is_today=None):
         if product_card:
             return select(k for k in KeyWord if f' {k.keyword} ' in product_card or f'"{k.keyword} ' in product_card or f' {k.keyword}"' in product_card or f'{k.keyword} ' in product_card or f' {k.keyword}' in product_card and len(k.keyword) > 1).order_by(lambda: desc(k.requests))[:]
         elif article:
             return select(k for k in KeyWord if int(article) in k.search_1 or int(article) in k.search_2 or int(article) in k.search_3)[:]
         else:
-            return select([k.id, k.keyword, k.requests] for k in KeyWord).order_by(lambda: k.id)[:]
+            return select([k.id, k.keyword, k.requests] for k in KeyWord if k.is_today == is_today).order_by(lambda: k.id)[:]
+    
+
+    @db_session()
+    def delete_keywords(self, is_today=None):
+        if is_today != None:
+            for k in select(k for k in KeyWord if not k.is_today)[:]:
+                if KeyWord.exists(keyword=k.keyword, is_today=True):
+                    k.delete()
+                else:
+                    k.is_today = True
