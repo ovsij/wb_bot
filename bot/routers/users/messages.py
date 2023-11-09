@@ -149,10 +149,10 @@ async def reports_search_keywords(message: Message, db_request: DbRequests, stat
         keywords = db_request.get_keywords(article=article)
         search_results = []
         for keyword in keywords:
-            page_id = 1 if article in keyword.search_1 else 2 if article in keyword.search_2 else 3
+            page_id = 1 if int(article) in keyword.search_1 else 2 if int(article) in keyword.search_2 else 3
             print(page_id)
             page_list = keyword.search_1 if page_id == 1 else keyword.search_2 if page_id == 2 else keyword.search_3
-            index = page_list.index(article) + 1
+            index = page_list.index(int(article)) + 1
             search_results.append({keyword.keyword: [page_id, index, list(keyword.values())[0], keyword.total]})
 
         await CreateTelegraph.create_page(requests=keywords, article=article)
