@@ -83,7 +83,7 @@ async def get_request(db_request, keyword, start, session):
                 await asyncio.sleep(5)
     if len(products) > 0:
         for prod in products:
-            db_request.update_keyword(id=keyword[0], search=page_products, total=total, page=products.index(prod)+1)
+            db_request.update_keyword(id=keyword[0], search=prod, total=total, page=products.index(prod)+1)
         
 
 
