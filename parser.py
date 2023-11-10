@@ -29,7 +29,7 @@ async def main():
     
     start = datetime.now()
     session = aiohttp.ClientSession(trust_env=True)
-    for i in range(1, 101):
+    for i in range(84, 101):
         logging.info(f'i: {i}')
         time = datetime.now()
         logging.info(f'start: {(i - 1) * 10000} : {i * 10000}')
