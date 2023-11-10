@@ -32,9 +32,9 @@ async def main():
     start = datetime.now()
     session = aiohttp.ClientSession(trust_env=True)
     for num in range(1, 51):
-        logging.info(f'i: {i}')
+        logging.info(f'i: {num}')
         time = datetime.now()
-        logging.info(f'start: {(i - 1) * 10000} : {i * 10000}')
+        logging.info(f'start: {(num - 1) * 10000} : {num * 10000}')
         logging.info(f'time: {time}')
         tasks = set()
         for i in range((num - 1) * 10000, num * 10000):
