@@ -85,7 +85,6 @@ async def get_request(db_request, keyword, start, session, i):
             pass
     if len(products) == 3:
         db_request.create_keyword(keyword=keyword[0], requests=keyword[1], search_1=products[0], search_2=products[1], search_3=products[2], total=total)
-    print(i)
 
 async def main_1():
     query = 'свитер женский'
