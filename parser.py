@@ -12,7 +12,7 @@ from tqdm import tqdm
 from bot.database.functions.db_requests import DbRequests
 logging.basicConfig(level=logging.INFO)
 
-async def main():
+async def main(start_num):
     logging.info('start')
     db_request = DbRequests()
     # удалить вчерашние запросы
@@ -30,31 +30,38 @@ async def main():
     logging.info('keywords extracted from file')
     
     start = datetime.now()
-    
-    for num in range(1, 51):
-        session = aiohttp.ClientSession(trust_env=True)
-        logging.info(f'i: {num}')
-        time = datetime.now()
-        logging.info(f'start: {(num - 1) * 10000} : {num * 10000}')
-        logging.info(f'time: {time}')
-        tasks = set()
-        for i in range((num - 1) * 10000, num * 10000):
-            keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
-            tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
-        results = await asyncio.gather(*tasks)
-        await session.close()
+    session = aiohttp.ClientSession(trust_env=True)
+    for num in range(start_num, 51):
+        try:
+            logging.info(f'i: {num}')
+            time = datetime.now()
+            logging.info(f'start: {(num - 1) * 10000} : {num * 10000}')
+            logging.info(f'time: {time}')
+            tasks = set()
+            for i in range((num - 1) * 10000, num * 10000):
+                keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
+                tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session, i)))
+            results = await asyncio.gather(*tasks)
+        except:
+            await main(num)
+
+    await session.close()
     
     end = datetime.now()
     logging.info(f'Time {end-start}')
             
 
-async def get_request(db_request, keyword, start, session):
+async def get_request(db_request, keyword, start, session, i):
+    
     url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
     params_first = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[0], 'resultset': 'filters'}
     try:
         async with session.get(url, params=params_first, ssl=False) as response:
             result = await response.json(content_type='text/plain')
             total = result['data']['total']
+        #response = requests.get(url, params=params_first)
+        #result = response.json()
+        #total = result['data']['total']
     except:
         total = 0
         #print(total)
@@ -70,11 +77,16 @@ async def get_request(db_request, keyword, start, session):
                     products.append(page_products)
                 else:
                     pass
+            #response = requests.get(url, params=params_second)
+            #result = response.json()
+            #page_products = [p['id'] for p in result['data']['products']]
+            #products.append(page_products)
         except:
             pass
     if len(products) == 3:
         db_request.create_keyword(keyword=keyword[0], requests=keyword[1], search_1=products[0], search_2=products[1], search_3=products[2], total=total)
-        
+    print(i)
+
 async def main_1():
     query = 'свитер женский'
     session = aiohttp.ClientSession(trust_env=True)
@@ -122,4 +134,4 @@ if __name__ == '__main__':
         tsk = loop.create_task(main())
     else:
         logging.info('Starting new event loop')
-        result = asyncio.run(main())
+        result = asyncio.run(main(1))
