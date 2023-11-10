@@ -656,6 +656,27 @@ class DbRequests:
 
     """KeyWord requests"""
     @db_session()
+    def create_keyword(self, keyword, requests, search_1, search_2, search_3, total):
+        if KeyWord.exists(keyword=keyword, is_today=True):
+            today_keyword = KeyWord.get(keyword=keyword, is_today=True)
+            if KeyWord.exists(keyword=keyword, is_today=False):
+                yesterday_keyword = KeyWord.get(keyword=keyword, is_today=False)
+                yesterday_keyword.requests = today_keyword.requests
+                yesterday_keyword.search_1 = today_keyword.search_1
+                yesterday_keyword.search_2 = today_keyword.search_2
+                yesterday_keyword.search_3 = today_keyword.search_3
+                yesterday_keyword.total = today_keyword.total
+            else:
+                KeyWord(keyword=today_keyword.keyword, requests=today_keyword.requests, search_1=today_keyword.search_1, search_2=today_keyword.search_2, search_3=today_keyword.search_3, total=today_keyword.total, is_today=False)
+            today_keyword.requests = requests
+            today_keyword.search_1 = search_1
+            today_keyword.search_2 = search_2
+            today_keyword.search_3 = search_3
+            today_keyword.total = total
+        else:
+            KeyWord(keyword=keyword, requests=requests, search_1=search_1, search_2=search_2, search_3=search_3, total=total, is_today=True)
+
+    @db_session()
     def create_keywords(self):
         import pandas as pd
         df = pd.read_csv('bot/database/requests.csv', names=['keyword', 'requests'])
@@ -668,20 +689,22 @@ class DbRequests:
                 print(ex)
     
     @db_session()
-    def update_keyword(self, id=None, search=None, total=None, page=None, is_today=None):
-        
-        if is_today:
-            for k in select(k for k in KeyWord)[:]:
-                k.is_today = False
-        else:
-            keyword_for_update = KeyWord[id]
-            keyword_for_update.total = total
-            if page == 1:
-                keyword_for_update.search_1 = search
-            if page == 2:
-                keyword_for_update.search_2 = search
-            if page == 3:
-                keyword_for_update.search_3 = search
+    def update_keyword(self, id=None, search=None, total=None):
+    
+        keyword_for_update = KeyWord[id]
+        if KeyWord.exists(keyword=keyword_for_update.keyword, is_today=False):
+            yesterday_keyword = KeyWord.get(keyword=keyword_for_update.keyword, is_today=False)
+            yesterday_keyword.search_1 = keyword_for_update.search_1
+            yesterday_keyword.search_2 = keyword_for_update.search_2
+            yesterday_keyword.search_3 = keyword_for_update.search_3
+            
+        keyword_for_update.total = total
+        if page == 1:
+            keyword_for_update.search_1 = search
+        if page == 2:
+            keyword_for_update.search_2 = search
+        if page == 3:
+            keyword_for_update.search_3 = search
 
 
     @db_session()

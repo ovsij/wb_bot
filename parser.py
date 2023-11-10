@@ -2,6 +2,7 @@ import aiohttp, asyncio
 from datetime import datetime
 import concurrent.futures
 import logging
+import pandas as pd
 import requests
 import time
 from tqdm import tqdm
@@ -15,29 +16,31 @@ async def main():
     logging.info('start')
     db_request = DbRequests()
     # удалить вчерашние запросы
-    db_request.delete_keywords(is_today=False)
-    logging.info('удалить вчерашние запросы - DONE')
+    #db_request.delete_keywords(is_today=False)
+    #logging.info('удалить вчерашние запросы - DONE')
     # сделать сегодняшние вчерашними
-    db_request.update_keyword(is_today=True)
-    logging.info('сделать сегодняшние вчерашними - DONE')
+    #db_request.update_keyword(is_today=True)
+    #logging.info('сделать сегодняшние вчерашними - DONE')
     # создать сегодняшние
-    db_request.create_keywords()
-    logging.info('создать сегодняшние - DONE')
+    #db_request.create_keywords()
+    #logging.info('создать сегодняшние - DONE')
 
-    keywords = db_request.get_keywords(is_today=True)
+    #keywords = db_request.get_keywords(is_today=True)
+    keywords_df = pd.read_csv('bot/database/requests.csv', names=['keyword', 'requests'])
     logging.info('keywords extracted from db')
     
     start = datetime.now()
     session = aiohttp.ClientSession(trust_env=True)
-    for i in range(84, 101):
+    for num in range(1, 51):
         logging.info(f'i: {i}')
         time = datetime.now()
         logging.info(f'start: {(i - 1) * 10000} : {i * 10000}')
         logging.info(f'time: {time}')
         tasks = set()
-        for keyword in keywords[(i - 1) * 10000:i * 10000]:
+        for i in range((num - 1) * 10000, num * 10000):
+            keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
             tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
-        reqults = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
     await session.close()
     
     end = datetime.now()
@@ -46,7 +49,7 @@ async def main():
 
 async def get_request(db_request, keyword, start, session):
     url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
-    params_first = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
+    params_first = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[0], 'resultset': 'filters'}
     async with session.get(url, params=params_first, ssl=False) as response:
         try:
             result = await response.json(content_type='text/plain')
@@ -59,7 +62,7 @@ async def get_request(db_request, keyword, start, session):
     for page in range(1, 4):
         #print(page)
         
-        params_second = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[1]), 'resultset': 'catalog', 'sort':'popular', 'spp': 26, 'suppressSpellcheck': 'false'}
+        params_second = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[0]), 'resultset': 'catalog', 'sort':'popular', 'spp': 26, 'suppressSpellcheck': 'false'}
         async with session.get(url, params=params_second, ssl=False) as response:
             if response.status == 200:
                 try:
@@ -73,9 +76,8 @@ async def get_request(db_request, keyword, start, session):
             else:
                 #print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
                 await asyncio.sleep(5)
-    if len(products) > 0:
-        for prod in products:
-            db_request.update_keyword(id=keyword[0], search=prod, total=total, page=products.index(prod)+1)
+    if len(products) == 3:
+        db_request.create_keyword(keyword=keyword[0], requests=keyword[1], search_1=products[0], search_2=products[1], search_3=products[2], total=total)
         
 async def main_1():
     query = 'свитер женский'
