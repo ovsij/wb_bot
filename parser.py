@@ -27,7 +27,7 @@ async def main():
 
     #keywords = db_request.get_keywords(is_today=True)
     keywords_df = pd.read_csv('bot/database/requests.csv', names=['keyword', 'requests'])
-    logging.info('keywords extracted from db')
+    logging.info('keywords extracted from file')
     
     start = datetime.now()
     session = aiohttp.ClientSession(trust_env=True)
@@ -50,32 +50,27 @@ async def main():
 async def get_request(db_request, keyword, start, session):
     url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
     params_first = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[0], 'resultset': 'filters'}
-    async with session.get(url, params=params_first, ssl=False) as response:
-        try:
+    try:
+        async with session.get(url, params=params_first, ssl=False) as response:
             result = await response.json(content_type='text/plain')
             total = result['data']['total']
-        except:
-            total = 0
+    except:
+        total = 0
         #print(total)
     #print(keyword)
     products = []
     for page in range(1, 4):
-        #print(page)
-        
         params_second = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[0]), 'resultset': 'catalog', 'sort':'popular', 'spp': 26, 'suppressSpellcheck': 'false'}
-        async with session.get(url, params=params_second, ssl=False) as response:
-            if response.status == 200:
-                try:
+        try:
+            async with session.get(url, params=params_second, ssl=False) as response:
+                if response.status == 200:
                     result = await response.json(content_type='text/plain')
                     page_products = [p['id'] for p in result['data']['products']]
                     products.append(page_products)
-                    #print(page)
-                except:
-                    #print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                    await asyncio.sleep(5)
-            else:
-                #print(f'{keyword[0]} НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-                await asyncio.sleep(5)
+                else:
+                    pass
+        except:
+            pass
     if len(products) == 3:
         db_request.create_keyword(keyword=keyword[0], requests=keyword[1], search_1=products[0], search_2=products[1], search_3=products[2], total=total)
         
