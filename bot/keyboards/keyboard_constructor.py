@@ -1,5 +1,5 @@
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
@@ -29,6 +29,9 @@ class InlineConstructor:
                     kb.row(*row_btns)
                 elif button_type[i] == 'url':
                     row_btns = (InlineKeyboardButton(text=text, url=data) for text, data in text_and_data[:schema[i]])
+                    kb.row(*row_btns)
+                elif button_type[i] == 'web_app':
+                    row_btns = (InlineKeyboardButton(text=text, web_app=WebAppInfo(url=data, isExpanded=True)) for text, data in text_and_data[:schema[i]])
                     kb.row(*row_btns)
                 for _ in range(schema[i]):
                     text_and_data.pop(0)

@@ -132,7 +132,6 @@ async def reports_search(message: Message, db_request: DbRequests, state: FSMCon
 
 @user_messages_router.message(Form.search_keywords)
 async def reports_search_keywords(message: Message, db_request: DbRequests, state: FSMContext):
-    start = datetime.now()
     article = ''
     if '.ru' in message.text:
         article = re.search('\d\d\d\d\d+', message.text)
@@ -146,18 +145,7 @@ async def reports_search_keywords(message: Message, db_request: DbRequests, stat
     print('art')
     print(article)
     if len(article) > 0:
-        keywords = db_request.get_keywords(article=article)
-        search_results = []
-        for keyword in keywords:
-            page_id = 1 if int(article) in keyword.search_1 else 2 if int(article) in keyword.search_2 else 3
-            page_list = keyword.search_1 if page_id == 1 else keyword.search_2 if page_id == 2 else keyword.search_3
-            index = page_list.index(int(article)) + 1
-            search_results.append({keyword.keyword: [page_id, index, keyword.requests, keyword.total]})
-
-        await CreateTelegraph.create_page(requests=search_results, article=article)
-
-        await message.answer_document(FSInputFile('test.html'))
-
-    end = datetime.now()
-    print(f'time: {end-start}')
+        url = f'https://wbconcierge-1-l1790708.deta.app/search/{article}'
+        text, reply_markup = inline_kb_searchresult(url)
+        await message.answer(text=text, reply_markup=reply_markup)
                     

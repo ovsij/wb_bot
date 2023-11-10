@@ -691,20 +691,7 @@ class DbRequests:
     @db_session()
     def update_keyword(self, id=None, search=None, total=None):
     
-        keyword_for_update = KeyWord[id]
-        if KeyWord.exists(keyword=keyword_for_update.keyword, is_today=False):
-            yesterday_keyword = KeyWord.get(keyword=keyword_for_update.keyword, is_today=False)
-            yesterday_keyword.search_1 = keyword_for_update.search_1
-            yesterday_keyword.search_2 = keyword_for_update.search_2
-            yesterday_keyword.search_3 = keyword_for_update.search_3
-            
-        keyword_for_update.total = total
-        if page == 1:
-            keyword_for_update.search_1 = search
-        if page == 2:
-            keyword_for_update.search_2 = search
-        if page == 3:
-            keyword_for_update.search_3 = search
+        pass
 
 
     @db_session()

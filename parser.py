@@ -30,8 +30,9 @@ async def main():
     logging.info('keywords extracted from file')
     
     start = datetime.now()
-    session = aiohttp.ClientSession(trust_env=True)
+    
     for num in range(1, 51):
+        session = aiohttp.ClientSession(trust_env=True)
         logging.info(f'i: {num}')
         time = datetime.now()
         logging.info(f'start: {(num - 1) * 10000} : {num * 10000}')
@@ -41,7 +42,7 @@ async def main():
             keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
             tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
         results = await asyncio.gather(*tasks)
-    await session.close()
+        await session.close()
     
     end = datetime.now()
     logging.info(f'Time {end-start}')

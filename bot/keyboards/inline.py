@@ -1471,3 +1471,11 @@ def inline_kb_search_keywords():
                    sep='\n')
     return text.as_html()
     
+
+def inline_kb_searchresult(url):
+    text = 'ываываыва'
+    text_and_data = [
+        ['Открыть', url]
+    ]
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, button_type=['web_app'])
+    return text, reply_markup
