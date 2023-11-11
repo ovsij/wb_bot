@@ -311,7 +311,7 @@ async def update_seller(seller, tariff : bool = None):
     #try:
     logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
     orders = await Statistics.get_orders(db_request, seller)
-    logging.info(len(orders))
+    logging.info(orders)
     new_orders = []
     for order in orders:
         new_order = db_request.create_order(gNumber=order['gNumber'],
