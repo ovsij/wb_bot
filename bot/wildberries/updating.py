@@ -116,7 +116,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         keywords = db_request.get_keywords(article=order.nmId, is_today=True)
         #print(keywords)
         #print(len(keywords))
-        text += as_line('🔍 Позиции в поиске:')
+        text += as_line('\n🔍 Позиции в поиске:\n')
         data = []
         for keyword in keywords:
             page = 1 if int(order.nmId) in keyword.search_1 else 2 if int(order.nmId) in keyword.search_2 else 3
