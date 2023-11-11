@@ -31,7 +31,7 @@ async def main(start_num):
     
     start = datetime.now()
     session = aiohttp.ClientSession(trust_env=True)
-    for num in range(start_num, 51):
+    for num in range(start_num, 101):
         try:
             logging.info(f'i: {num}')
             time = datetime.now()
@@ -135,4 +135,4 @@ if __name__ == '__main__':
         tsk = loop.create_task(main())
     else:
         logging.info('Starting new event loop')
-        result = asyncio.run(main(1))
+        result = asyncio.run(main(51))
