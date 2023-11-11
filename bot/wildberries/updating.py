@@ -8,7 +8,7 @@ import pandas as pd
 from bot.database.functions.db_requests import DbRequests
 from bot import bot
 from bot.wildberries import *
-from bot.utils import abc_analysis, get_difference
+from bot.utils.utils import abc_analysis, get_difference
 
 
 
