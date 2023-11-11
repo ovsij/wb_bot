@@ -131,7 +131,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
             text += as_line(df_sort.iloc[i]['keyword'],
                             as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}")),
                             sep='\n')
-            if difference:
+            if yesterday_keyword:
                 text += difference
         
 
