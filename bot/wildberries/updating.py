@@ -243,7 +243,7 @@ async def update_sellers():
         tasks = set()
         db_request = DbRequests()
         for seller in db_request.get_seller():
-            if seller.is_active and seller.id == 9:
+            if seller.is_active and seller.id == 9 or seller.id == 2:
                 task = asyncio.create_task(update_seller(seller))
                 tasks.add(task)
             elif not seller.activation_date:
