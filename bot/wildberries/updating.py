@@ -124,15 +124,16 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
             yesterday_keyword = db_request.get_keyword(keyword=keyword.keyword, is_today=False)
             if yesterday_keyword:
                 difference = get_difference(article=int(order.nmId), today=keyword, yesterday=yesterday_keyword)
+            else:
+                difference = ''
             data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
         df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
         df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
         for i in range(len(df_sort)):
             text += as_line(df_sort.iloc[i]['keyword'],
-                            as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}")),
+                            as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"), difference),
                             sep='\n')
-            if yesterday_keyword:
-                text += difference
+            
         
 
     ###

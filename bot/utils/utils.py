@@ -6,6 +6,10 @@ def get_difference(article, today, yesterday):
     yesterday_page = 1 if article in yesterday.search_1 else 2 if article in yesterday.search_2 else 3
     yesterday_index = yesterday.search_1.index(article) + 1 if yesterday_page == 1 else yesterday.search_2.index(article) + 1 if yesterday_page == 2 else yesterday.search_3.index(article) + 1
 
+    print(f'today_page {today_page}')
+    print(f'today_index {today_index}')
+    print(f'yesterday_page {yesterday_page}')
+    print(f'yesterday_index {yesterday_index}')
     if today_page == yesterday_page:
         diff = today_index - yesterday_index
     if today_page == 1 and yesterday_page == 2:
