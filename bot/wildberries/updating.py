@@ -118,18 +118,19 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         #print(len(keywords))
         text += as_line('🔍 Позиции в поиске:')
         data = []
-        for keyword in keywords[:6]:
+        for keyword in keywords:
             page = 1 if int(order.nmId) in keyword.search_1 else 2 if int(order.nmId) in keyword.search_2 else 3
             index = keyword.search_1.index(int(order.nmId)) + 1 if page == 1 else keyword.search_2.index(int(order.nmId)) + 1 if page == 2 else keyword.search_3.index(int(order.nmId)) + 1
-            yesterday_keyword = db_request.get_keyword(keyword=keyword.keyword, is_today=False)
-            if yesterday_keyword:
-                difference = get_difference(article=int(order.nmId), today=keyword, yesterday=yesterday_keyword)
-            else:
-                difference = ''
             data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
         df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
         df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
-        for i in range(len(df_sort)):
+        len_range = 7 if len(df_sort) > 6 else len(df_sort)
+        for i in range(1, len_range):
+            yesterday_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=False)
+            if yesterday_keyword:
+                difference = get_difference(article=int(order.nmId), today=df_sort.iloc[i]['keyword'], yesterday=yesterday_keyword)
+            else:
+                difference = ''
             text += as_line(df_sort.iloc[i]['keyword'],
                             as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"), difference),
                             sep='\n')
