@@ -7,7 +7,7 @@ config = load_config('.env')
 
 #db.bind(provider='sqlite', filename='database.sqlite', create_db=True)
 # локальная БД
-#db.bind(provider='postgres', user=config.postgres.user, password=config.postgres.password, host='localhost', database=config.postgres.database)
+db.bind(provider='postgres', user=config.postgres.user, password=config.postgres.password, host='localhost', database=config.postgres.database)
 
 # основная БД
 #db.drop_all_tables(with_all_data=True)
