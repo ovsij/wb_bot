@@ -693,6 +693,10 @@ class DbRequests:
     
         pass
 
+    @db_session()
+    def get_keyword(self, keyword, is_today):
+        return KeyWord.get(keyword=keyword, is_today=is_today)
+    
 
     @db_session()
     def get_keywords(self, article=None, product_card=None, is_today=None):

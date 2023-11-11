@@ -8,7 +8,7 @@ import pandas as pd
 from bot.database.functions.db_requests import DbRequests
 from bot import bot
 from bot.wildberries import *
-from bot.utils import abc_analysis
+from bot.utils import abc_analysis, get_difference
 
 
 
@@ -120,13 +120,15 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         for keyword in keywords[:6]:
             page = 1 if int(order.nmId) in keyword.search_1 else 2 if int(order.nmId) in keyword.search_2 else 3
             index = keyword.search_1.index(int(order.nmId)) + 1 if page == 1 else keyword.search_2.index(int(order.nmId)) + 1 if page == 2 else keyword.search_3.index(int(order.nmId)) + 1
+            yesterday_keyword = db_request.get_keyword(keyword=keyword.keyword, is_today=False)
+            difference = get_difference(article=int(order.nmId, today=keyword, yesterday=yesterday_keyword)
             data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
         df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
         df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
-        print(df_sort)
         for i in range(len(df_sort)):
             text += as_line(df_sort.iloc[i]['keyword'],
-                            TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"))
+                            as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"), difference),
+                            sep='\n')
         
 
     ###
@@ -302,51 +304,51 @@ async def update_seller(seller, tariff : bool = None):
     except Exception as ex:
         logging.warning(ex)
     """UPDATING ORDERS"""
-    #try:
-    logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
-    orders = await Statistics.get_orders(db_request, seller)
-    new_orders = []
-    for order in orders:
-        new_order = db_request.create_order(gNumber=order['gNumber'],
-                                date=order['date'],
-                                lastChangeDate=order['lastChangeDate'],
-                                supplierArticle=order['supplierArticle'],
-                                techSize=order['techSize'],
-                                barcode=order['barcode'],
-                                totalPrice=order['totalPrice'],
-                                discountPercent=order['discountPercent'],
-                                warehouseName=order['warehouseName'],
-                                oblast=order['oblast'],
-                                incomeID=order['incomeID'],
-                                odid=order['odid'],
-                                nmId=order['nmId'],
-                                subject=order['subject'],
-                                category=order['category'],
-                                brand=order['brand'],
-                                isCancel=order['isCancel'],
-                                cancel_dt=order['cancel_dt'],
-                                sticker=order['sticker'],
-                                srid=order['srid'],
-                                orderType=order['orderType'],)
-        await asyncio.sleep(0.00001)
-        if new_order != None:
-            new_orders.append(new_order)
-    total_new_orders = len(new_orders)
-    for order in new_orders:
-        for employee in db_request.get_employee(seller_id=seller.id):
-            if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
-                text = await inline_kb_new_order(db_request, order_id=order.id, employee=employee, minus_total=total_new_orders)
-                total_new_orders -= 1
-                if text:
-                    user = db_request.get_user(id=employee.user.id)
-                    try:
-                        photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
-                        await bot.send_photo(user.tg_id, photo=photo, caption=text)
-                    except Exception as ex:
-                        logging.warning(ex)
+    try:
+        logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
+        orders = await Statistics.get_orders(db_request, seller)
+        new_orders = []
+        for order in orders:
+            new_order = db_request.create_order(gNumber=order['gNumber'],
+                                    date=order['date'],
+                                    lastChangeDate=order['lastChangeDate'],
+                                    supplierArticle=order['supplierArticle'],
+                                    techSize=order['techSize'],
+                                    barcode=order['barcode'],
+                                    totalPrice=order['totalPrice'],
+                                    discountPercent=order['discountPercent'],
+                                    warehouseName=order['warehouseName'],
+                                    oblast=order['oblast'],
+                                    incomeID=order['incomeID'],
+                                    odid=order['odid'],
+                                    nmId=order['nmId'],
+                                    subject=order['subject'],
+                                    category=order['category'],
+                                    brand=order['brand'],
+                                    isCancel=order['isCancel'],
+                                    cancel_dt=order['cancel_dt'],
+                                    sticker=order['sticker'],
+                                    srid=order['srid'],
+                                    orderType=order['orderType'],)
+            await asyncio.sleep(0.00001)
+            if new_order != None:
+                new_orders.append(new_order)
+        total_new_orders = len(new_orders)
+        for order in new_orders:
+            for employee in db_request.get_employee(seller_id=seller.id):
+                if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
+                    text = await inline_kb_new_order(db_request, order_id=order.id, employee=employee, minus_total=total_new_orders)
+                    total_new_orders -= 1
+                    if text:
+                        user = db_request.get_user(id=employee.user.id)
+                        try:
+                            photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
+                            await bot.send_photo(user.tg_id, photo=photo, caption=text)
+                        except Exception as ex:
+                            logging.warning(ex)
             
-    #except Exception as ex:
-    #    logging.warning(ex)
+    except Exception as ex:
+        logging.warning(ex)
     """UPDATING SALES"""
     try:
         logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
