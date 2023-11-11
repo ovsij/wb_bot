@@ -122,14 +122,17 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
             page = 1 if int(order.nmId) in keyword.search_1 else 2 if int(order.nmId) in keyword.search_2 else 3
             index = keyword.search_1.index(int(order.nmId)) + 1 if page == 1 else keyword.search_2.index(int(order.nmId)) + 1 if page == 2 else keyword.search_3.index(int(order.nmId)) + 1
             yesterday_keyword = db_request.get_keyword(keyword=keyword.keyword, is_today=False)
-            difference = get_difference(article=int(order.nmId), today=keyword, yesterday=yesterday_keyword)
+            if yesterday_keyword:
+                difference = get_difference(article=int(order.nmId), today=keyword, yesterday=yesterday_keyword)
             data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
         df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
         df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
         for i in range(len(df_sort)):
             text += as_line(df_sort.iloc[i]['keyword'],
-                            as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"), difference),
+                            as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}")),
                             sep='\n')
+            if difference:
+                text += difference
         
 
     ###
