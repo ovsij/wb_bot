@@ -111,10 +111,10 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
     
     if employee.is_key_words:
-        print(order.nmId)
+        #print(order.nmId)
         keywords = db_request.get_keywords(article=order.nmId, is_today=True)
-        print(keywords)
-        print(len(keywords))
+        #print(keywords)
+        #print(len(keywords))
         text += as_line('🔍 Позиции в поиске:')
         data = []
         for keyword in keywords[:6]:
@@ -123,6 +123,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
             data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
             df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
             df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
+            print(df_sort)
             for i in range(len(df_sort)):
                 text += as_line(df_sort.iloc[i]['keyword'],
                                 TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"))
