@@ -133,8 +133,6 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         
 
     ###
-    if employee.user.id != 1:
-        return False
     is_all = all([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites])
     if is_all:
         return text.as_html()
@@ -240,7 +238,7 @@ async def update_sellers():
         tasks = set()
         db_request = DbRequests()
         for seller in db_request.get_seller():
-            if seller.is_active:
+            if seller.is_active and seller.id == 9:
                 task = asyncio.create_task(update_seller(seller))
                 tasks.add(task)
             elif not seller.activation_date:
