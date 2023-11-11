@@ -44,12 +44,13 @@ class Statistics:
                 if response.status == 200:
                     result = await response.json()
                     return result
+                elif response.status == 401:
+                    print(f'Sales {seller} Unauthorized response')
                 else:
-                    if '401 Unauthorized' in response:
-                        pass
                     print('orders list is empty')
                     print(seller.token)
                     print(response)
+            
                     await asyncio.sleep(10)
                     return await Statistics.get_orders(db_request, seller)
     
@@ -66,6 +67,8 @@ class Statistics:
                 if response.status == 200:
                     result = await response.json()
                     return result
+                elif response.status == 401:
+                    print(f'Sales {seller} Unauthorized response')
                 else:
                     print('sales list is empty')
                     print(response)

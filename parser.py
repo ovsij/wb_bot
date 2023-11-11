@@ -43,6 +43,8 @@ async def main(start_num):
                 tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session, i)))
             results = await asyncio.gather(*tasks)
         except:
+            if num == 50:
+                break
             await main(num)
 
     await session.close()

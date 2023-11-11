@@ -3,6 +3,7 @@ from aiogram.types import FSInputFile
 from aiogram.utils.formatting import *
 from datetime import date, datetime, timedelta
 import logging
+import pandas as pd
 
 from bot.database.functions.db_requests import DbRequests
 from bot import bot
@@ -100,7 +101,6 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
                    '',
                    sep='\n'
                    )
-    logging.info(warehouses)
     for name, quantity in warehouses.items():
         text += as_line(f'📦 {name}: {quantity[0]} шт. хватит на {quantity[1]} дн.')
 
@@ -110,6 +110,26 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
     elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
     
+    if employee.is_key_words:
+        print(order.nmId)
+        keywords = db_request.get_keywords(article=order.nmId, is_today=True)
+        print(keywords)
+        text += as_line('🔍 Позиции в поиске:')
+        data = []
+        for keyword in keywords[:6]:
+            page = 1 if int(order.nmId) in keyword.search_1 else 2 if int(order.nmId) in keyword.search_2 else 3
+            index = keyword.search_1.index(int(order.nmId)) + 1 if page == 1 else keyword.search_2.index(int(order.nmId)) + 1 if page == 2 else keyword.search_3.index(int(order.nmId)) + 1
+            data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
+            df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
+            df_sort = df.sort_values(['page', 'index'], ascending=[False, False])
+            for i in range(len(df_sort)):
+                text += as_line(df_sort.iloc[i]['keyword'],
+                                TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"))
+            
+
+    ###
+    if employee.user.id != 1:
+        return False
     is_all = all([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites])
     if is_all:
         return text.as_html()
