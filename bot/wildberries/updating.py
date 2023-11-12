@@ -127,9 +127,10 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
         len_range = 7 if len(df_sort) > 6 else len(df_sort)
         for i in range(1, len_range):
+            today_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=True)
             yesterday_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=False)
             if yesterday_keyword:
-                difference = get_difference(article=int(order.nmId), today=df_sort.iloc[i]['keyword'], yesterday=yesterday_keyword)
+                difference = get_difference(article=int(order.nmId), today=today_keyword, yesterday=yesterday_keyword)
             else:
                 difference = ''
             text += as_line(df_sort.iloc[i]['keyword'],
@@ -244,9 +245,10 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
         df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
         len_range = 7 if len(df_sort) > 6 else len(df_sort)
         for i in range(1, len_range):
+            today_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=True)
             yesterday_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=False)
             if yesterday_keyword:
-                difference = get_difference(article=int(sale.nmId), today=df_sort.iloc[i]['keyword'], yesterday=yesterday_keyword)
+                difference = get_difference(article=int(sale.nmId), today=today_keyword, yesterday=yesterday_keyword)
             else:
                 difference = ''
             text += as_line(df_sort.iloc[i]['keyword'],
