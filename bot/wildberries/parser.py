@@ -51,3 +51,21 @@ class WbParser:
                     print(result)
                 else:
                     print(response)
+    
+    async def get_seller_name(article):
+        url = f'https://card.wb.ru/cards/v1/detail'
+        params = {
+            'appType': 1,
+            'curr': 'rub',
+            'dest': -1257786,
+            'spp': 25,
+            'nm': article
+        }
+        async with aiohttp.ClientSession(trust_env=True) as session:
+            async with session.get(url, params=params, ssl=False) as response:
+                if response.status == 200:
+                    result = await response.json()
+                    return result['data']['products'][0]['supplier']
+                else:
+                    await asyncio.sleep(3)
+                    WbParser.get_seller_name(article)

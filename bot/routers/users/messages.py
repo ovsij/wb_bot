@@ -21,9 +21,9 @@ async def get_wb_token(message: Message, db_request: DbRequests, state: FSMConte
     data = await state.get_data()
     report = await Statistics.get_reportDetailByPeriod(token)
     if report:
-        brand_name = report[0]['brand_name']
+        seller_name = await WbParser.get_seller_name(article=report[0]['nm_id']).replace('Индивидуальный предприниматель', 'ИП')
         if data['stage'] == 'connect' or data['stage'] == 'add_seller':
-            seller = db_request.create_seller(name=brand_name, user_id=db_request.get_user(tg_id=str(message.from_user.id)).id, token=token)
+            seller = db_request.create_seller(name=seller_name, user_id=db_request.get_user(tg_id=str(message.from_user.id)).id, token=token)
             if data['stage'] == 'connect':
                 text, reply_markup = inline_kb_sucсess_start(seller.id)
             elif data['stage'] == 'add_seller':
@@ -35,7 +35,7 @@ async def get_wb_token(message: Message, db_request: DbRequests, state: FSMConte
                     asyncio.create_task(update_seller(seller, tariff=True))
 
         elif data['stage'] == 'changeapifbo':
-            seller = db_request.update_seller(id=data['seller_id'], name=brand_name, token=token, products=[])
+            seller = db_request.update_seller(id=data['seller_id'], name=seller_name, token=token, products=[])
             text, reply_markup = inline_kb_shop_settings(db_request, seller_id=seller.id, tg_id=str(message.from_user.id))
         
         await state.clear()
