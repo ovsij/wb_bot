@@ -384,7 +384,7 @@ async def update_seller(seller, tariff : bool = None):
                         user = db_request.get_user(id=employee.user.id)
                         try:
                             photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
-                            #await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                            await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
                         except Exception as ex:
                             logging.warning(ex)
             
@@ -434,7 +434,7 @@ async def update_seller(seller, tariff : bool = None):
                 user = db_request.get_user(id=employee.user.id)
                 try:
                     photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
-                    #await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
                 except Exception as ex:
                     logging.warning(ex)
     except Exception as ex:
