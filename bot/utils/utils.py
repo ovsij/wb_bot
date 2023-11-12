@@ -12,7 +12,7 @@ def get_difference(article, today, yesterday):
     #logging.info(f'yesterday_page {yesterday_page}')
     #logging.info(f'yesterday_index {yesterday_index}')
     if today_page == yesterday_page:
-        diff = today_index - yesterday_index
+        diff = yesterday_index - today_index
     if today_page == 1 and yesterday_page == 2:
         diff = yesterday_index + (100 - today_index)
     if today_page == 1 and yesterday_page == 3:
