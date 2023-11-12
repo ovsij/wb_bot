@@ -5,11 +5,10 @@ from bot.utils import regular_payment, regular_check_test_period
 from bot.wildberries import update_sellers
 
 async def main():
-    while True:
-        task1 = asyncio.create_task(update_sellers())
-        task2 = asyncio.create_task(regular_payment())
-        task3 = asyncio.create_task(regular_check_test_period())
-        asyncio.gather(task1, task2, task3)
+    task1 = asyncio.create_task(update_sellers())
+    task2 = asyncio.create_task(regular_payment())
+    task3 = asyncio.create_task(regular_check_test_period())
+    asyncio.gather(task1, task2, task3)
 
 
 if __name__ == '__main__':
