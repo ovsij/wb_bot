@@ -41,13 +41,16 @@ LOGISTICS = {
     'Екатеринбург 2': 134,
     'Новосибирск': 134,
 }
-async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_total : int):
+async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_total : int, search=None):
     order = db_request.get_order(id=order_id)
     product = db_request.get_product(id=order.product.id)
     price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
     product_warehouse = db_request.get_product_warehouse(product_id=product.id)
     sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
-    spp = [s['spp'] for s in sales_list if s['nmId'] == order.nmId][-1]
+    try:
+        spp = [s['spp'] for s in sales_list if s['nmId'] == order.nmId][-1]
+    except:
+        spp = 0
     inWayToClient = sum([p.inWayToClient for p in product_warehouse])
     inWayFromClient = sum([p.inWayFromClient for p in product_warehouse])
     sales = len(sales_list) - inWayFromClient
@@ -57,7 +60,10 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
     today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date()]
     yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == order.nmId]
     orders_list = [o for o in orders if o['gNumber'] in gNumbers]
-    buyout = int((sales/len(orders_list)) * 100)
+    try:
+        buyout = int((sales/len(orders_list)) * 100)
+    except:
+        buyout = 0
     abc, abc_percent = abc_analysis.get_abc(db_request, product_id=product.id, seller_id=product.seller.id)
     abc_emoji = '🟩' if abc == 'A' else '🟧' if abc == 'B' else '🟥'
     warehouses = {}
@@ -112,7 +118,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
     elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
     
-    if employee.is_key_words:
+    if employee.is_key_words and search:
         #print(order.nmId)
         keywords = db_request.get_keywords(article=order.nmId, is_today=True)
         #print(keywords)
@@ -274,13 +280,32 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
         else:
             return False
         
+async def inline_kb_add_order(db_request, order_id, minus_total):
+    order = db_request.get_order(id=order_id)
+    product = db_request.get_product(id=order.product.id)
+    today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
+    price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
+    sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    spp = [s['spp'] for s in sales_list if s['nmId'] == order.nmId][-1]
+    try:
+        logistic_price = f": {LOGISTICS[order.warehouseName]}₽"
+    except:
+        logistic_price = ''
+    text = as_line('', 
+                   order.date,
+                   f'🛒 Заказ [{len(today_orders) - minus_total}]: {price}₽',
+                   f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
+                   f'💼 Комиссия базовая: {round(price * (1 - 19/100), 2)}₽ (19%)',
+                   f'🌐 {order.warehouseName} → {order.oblast}{logistic_price}',
+                   sep='\n')
+    return text.as_html()
         
 async def update_sellers():
     while True:
         tasks = set()
         db_request = DbRequests()
         for seller in db_request.get_seller():
-            if seller.is_active:
+            if seller.is_active and seller.id == 40:
                 task = asyncio.create_task(update_seller(seller))
                 tasks.add(task)
             elif not seller.activation_date:
@@ -345,51 +370,60 @@ async def update_seller(seller, tariff : bool = None):
     except Exception as ex:
         logging.warning(f'{seller} stock ex - {ex}')
     """UPDATING ORDERS"""
-    try:
-        logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
-        orders = await Statistics.get_orders(db_request, seller)
-        new_orders = []
-        for order in orders:
-            new_order = db_request.create_order(gNumber=order['gNumber'],
-                                    date=order['date'],
-                                    lastChangeDate=order['lastChangeDate'],
-                                    supplierArticle=order['supplierArticle'],
-                                    techSize=order['techSize'],
-                                    barcode=order['barcode'],
-                                    totalPrice=order['totalPrice'],
-                                    discountPercent=order['discountPercent'],
-                                    warehouseName=order['warehouseName'],
-                                    oblast=order['oblast'],
-                                    incomeID=order['incomeID'],
-                                    odid=order['odid'],
-                                    nmId=order['nmId'],
-                                    subject=order['subject'],
-                                    category=order['category'],
-                                    brand=order['brand'],
-                                    isCancel=order['isCancel'],
-                                    cancel_dt=order['cancel_dt'],
-                                    sticker=order['sticker'],
-                                    srid=order['srid'],
-                                    orderType=order['orderType'],)
-            await asyncio.sleep(0.00001)
-            if new_order != None:
-                new_orders.append(new_order)
-        total_new_orders = len(new_orders)
-        for order in new_orders:
-            for employee in db_request.get_employee(seller_id=seller.id):
-                if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
+    #try:
+    logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
+    orders = await Statistics.get_orders(db_request, seller)
+    new_orders = []
+    for order in orders:
+        new_order = db_request.create_order(gNumber=order['gNumber'],
+                                date=order['date'],
+                                lastChangeDate=order['lastChangeDate'],
+                                supplierArticle=order['supplierArticle'],
+                                techSize=order['techSize'],
+                                barcode=order['barcode'],
+                                totalPrice=order['totalPrice'],
+                                discountPercent=order['discountPercent'],
+                                warehouseName=order['warehouseName'],
+                                oblast=order['oblast'],
+                                incomeID=order['incomeID'],
+                                odid=order['odid'],
+                                nmId=order['nmId'],
+                                subject=order['subject'],
+                                category=order['category'],
+                                brand=order['brand'],
+                                isCancel=order['isCancel'],
+                                cancel_dt=order['cancel_dt'],
+                                sticker=order['sticker'],
+                                srid=order['srid'],
+                                orderType=order['orderType'],)
+        await asyncio.sleep(0.00001)
+        if new_order != None:
+            new_orders.append(new_order)
+    total_new_orders = len(new_orders[2:4])
+    
+    for employee in db_request.get_employee(seller_id=seller.id):
+        if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
+            text = None
+            if len(new_orders) == 1:
+                text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=0, search=True)
+            elif len(new_orders) > 1:
+                for order in new_orders[:4]:
                     text, reply_markup = await inline_kb_new_order(db_request, order_id=order.id, employee=employee, minus_total=total_new_orders)
-                    total_new_orders -= 1
                     if text:
-                        user = db_request.get_user(id=employee.user.id)
-                        try:
-                            photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
-                            await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                        except Exception as ex:
-                            logging.warning(ex)
+                        text += '\n➕ в том числе 👇🏻\n'
+                        for order in new_orders[2:4]:
+                            text += await inline_kb_add_order(db_request, order_id=order.id, minus_total=total_new_orders)
+                            total_new_orders -= 1
+            if text:
+                user = db_request.get_user(id=employee.user.id)
+                try:
+                    photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
+                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                except Exception as ex:
+                    logging.warning(ex)
             
-    except Exception as ex:
-        logging.warning(f'{seller} orders ex - {ex}')
+    #except Exception as ex:
+    #    logging.warning(f'{seller} orders ex - {ex}')
     """UPDATING SALES"""
     try:
         logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
