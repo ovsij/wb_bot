@@ -30,3 +30,5 @@ def get_difference(article, today, yesterday):
         return f' (⬆ +{diff})'
     elif diff < 0:
         return f' (⬇ {diff})'
+    else:
+        return ''
