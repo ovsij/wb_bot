@@ -354,8 +354,8 @@ class DbRequests:
                        rating : float,
                        reviews : int, ):
         
-        if Product.exists(supplierArticle=supplierArticle):
-            product = Product.get(supplierArticle=supplierArticle)
+        if Product.exists(supplierArticle=supplierArticle, seller=Seller[seller_id]):
+            product = Product.get(supplierArticle=supplierArticle, seller=Seller[seller_id])
             product.price = price
             product.discount = discount
             product.rating = rating
@@ -397,10 +397,10 @@ class DbRequests:
     def get_product(self, id : int = None, seller_id : int | list = None, nmId : str = None, in_favorites : int = None, in_archive : int = None):
         if id:
             return Product[id]
-        elif seller_id:
+        elif seller_id and not nmId:
             seller_id = [seller_id] if type(seller_id) == int else seller_id
             return select(p for p in Product if p.seller in (s for s in Seller if s.id in seller_id))[:]
-        elif nmId:
+        elif nmId and seller_id:
             return Product.get(nmId=nmId)
         elif in_favorites:
             return select(p for p in Product if User_Seller[in_favorites] in p.in_favorites)[:]
