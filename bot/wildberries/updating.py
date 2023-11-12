@@ -124,7 +124,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
             index = keyword.search_1.index(int(order.nmId)) + 1 if page == 1 else keyword.search_2.index(int(order.nmId)) + 1 if page == 2 else keyword.search_3.index(int(order.nmId)) + 1
             data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
         df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
-        df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
+        df_sort = df.sort_values(['page', 'index', 'requests'], ascending=[True, True, True])
         len_range = 7 if len(df_sort) > 6 else len(df_sort)
         for i in range(1, len_range):
             today_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=True)
@@ -242,7 +242,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
             index = keyword.search_1.index(int(sale.nmId)) + 1 if page == 1 else keyword.search_2.index(int(sale.nmId)) + 1 if page == 2 else keyword.search_3.index(int(sale.nmId)) + 1
             data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
         df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
-        df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
+        df_sort = df.sort_values(['page', 'index', 'requests'], ascending=[True, True, True])
         len_range = 7 if len(df_sort) > 6 else len(df_sort)
         for i in range(1, len_range):
             today_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=True)
