@@ -43,8 +43,8 @@ async def main(start_num):
                 tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session, i)))
             results = await asyncio.gather(*tasks)
         except:
-            if num == 50:
-                break
+            #if num == 50:
+            #    break
             await main(num)
 
     await session.close()
@@ -135,4 +135,4 @@ if __name__ == '__main__':
         tsk = loop.create_task(main())
     else:
         logging.info('Starting new event loop')
-        result = asyncio.run(main(51))
+        result = asyncio.run(main(1))
