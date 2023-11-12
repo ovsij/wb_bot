@@ -343,7 +343,7 @@ async def update_seller(seller, tariff : bool = None):
                                     rating=rating,
                                     reviews=reviews)
     except Exception as ex:
-        logging.warning(ex)
+        logging.warning(f'{seller} stock ex - {ex}')
     """UPDATING ORDERS"""
     try:
         logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
@@ -389,7 +389,7 @@ async def update_seller(seller, tariff : bool = None):
                             logging.warning(ex)
             
     except Exception as ex:
-        logging.warning(ex)
+        logging.warning(f'{seller} orders ex - {ex}')
     """UPDATING SALES"""
     try:
         logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
@@ -438,7 +438,7 @@ async def update_seller(seller, tariff : bool = None):
                 except Exception as ex:
                     logging.warning(ex)
     except Exception as ex:
-        logging.warning(ex)
+        logging.warning(f'{seller} sales ex - {ex}')
 
 
     end = datetime.now()
