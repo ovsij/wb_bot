@@ -7,6 +7,7 @@ import pandas as pd
 
 from bot.database.functions.db_requests import DbRequests
 from bot import bot
+from bot.keyboards import *
 from bot.wildberries import *
 from bot.utils import abc_analysis
 from bot.utils.utils import get_difference
@@ -135,18 +136,22 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
                             as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"), difference),
                             sep='\n')
             
-        
+    url = f'https://wbconcierge-1-l1790708.deta.app/search/{order.nmId}'
+    text_and_data = [
+        ['Позиции в поиске 🔍', url]
+    ]
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, button_type=['web_app'])
 
     ###
     is_all = all([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites])
     if is_all:
-        return text.as_html()
+        return text.as_html(), reply_markup
     else:
         if employee.order_notif_end and quantity_total == 0 \
             or employee.order_notif_ending and employee.stock_reserve > quantity_till_total \
             or employee.order_notif_favorites and product in employee.favorites:
 
-            return text.as_html()
+            return text.as_html(), reply_markup
         else:
             return False
         
@@ -342,13 +347,13 @@ async def update_seller(seller, tariff : bool = None):
     for order in new_orders:
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
-                text = await inline_kb_new_order(db_request, order_id=order.id, employee=employee, minus_total=total_new_orders)
+                text, reply_markup = await inline_kb_new_order(db_request, order_id=order.id, employee=employee, minus_total=total_new_orders)
                 total_new_orders -= 1
                 if text:
                     user = db_request.get_user(id=employee.user.id)
                     try:
                         photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
-                        await bot.send_photo(user.tg_id, photo=photo, caption=text)
+                        await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
                     except Exception as ex:
                         logging.warning(ex)
             
