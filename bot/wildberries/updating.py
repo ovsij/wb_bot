@@ -229,16 +229,46 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
     elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
     
+    if employee.is_key_words:
+        #print(order.nmId)
+        keywords = db_request.get_keywords(article=sale.nmId, is_today=True)
+        #print(keywords)
+        #print(len(keywords))
+        text += as_line('\n🔍 Позиции в поиске:\n')
+        data = []
+        for keyword in keywords:
+            page = 1 if int(sale.nmId) in keyword.search_1 else 2 if int(sale.nmId) in keyword.search_2 else 3
+            index = keyword.search_1.index(int(sale.nmId)) + 1 if page == 1 else keyword.search_2.index(int(sale.nmId)) + 1 if page == 2 else keyword.search_3.index(int(sale.nmId)) + 1
+            data.append([keyword.keyword, page, index, keyword.requests, keyword.total])
+        df = pd.DataFrame(data=data, columns=['keyword', 'page', 'index', 'requests', 'total'])
+        df_sort = df.sort_values(['page', 'index'], ascending=[True, True])
+        len_range = 7 if len(df_sort) > 6 else len(df_sort)
+        for i in range(1, len_range):
+            yesterday_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=False)
+            if yesterday_keyword:
+                difference = get_difference(article=int(sale.nmId), today=df_sort.iloc[i]['keyword'], yesterday=yesterday_keyword)
+            else:
+                difference = ''
+            text += as_line(df_sort.iloc[i]['keyword'],
+                            as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"), difference),
+                            sep='\n')
+            
+    url = f'https://wbconcierge-1-l1790708.deta.app/search/{sale.nmId}'
+    text_and_data = [
+        ['Позиции в поиске 🔍', url]
+    ]
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, button_type=['web_app'])
 
+    ###
     is_all = all([employee.buyout_notif_end, employee.buyout_notif_ending, employee.buyout_notif_favorites])
     if is_all:
-        return text.as_html()
+        return text.as_html(), reply_markup
     else:
         if employee.buyout_notif_end and quantity_total == 0 \
             or employee.buyout_notif_ending and employee.stock_reserve > quantity_till_total \
             or employee.buyout_notif_favorites and product in employee.favorites:
             
-            return text.as_html()
+            return text.as_html(), reply_markup
         else:
             return False
         
@@ -397,12 +427,12 @@ async def update_seller(seller, tariff : bool = None):
         total_new_sales = len(new_sales)
         for sale in new_sales:
             for employee in db_request.get_employee(seller_id=seller.id):
-                text = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
+                text, reply_markup = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
                 total_new_sales -= 1
                 user = db_request.get_user(id=employee.user.id)
                 try:
                     photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
-                    await bot.send_photo(user.tg_id, photo=photo, caption=text)
+                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
                 except Exception as ex:
                     logging.warning(ex)
     except Exception as ex:
