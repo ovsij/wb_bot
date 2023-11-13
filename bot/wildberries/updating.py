@@ -415,7 +415,7 @@ async def update_seller(seller, tariff : bool = None):
             if len(new_orders) == 1:
                 text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=0, search=True)
             elif len(new_orders) > 1:
-                text, reply_markup = await inline_kb_new_order(db_request, order_id=order[0].id, employee=employee, minus_total=total_new_orders)
+                text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=total_new_orders)
                 if text:
                     text += '\n➕ в том числе 👇🏻\n'
                     for order in new_orders[1:3]:
