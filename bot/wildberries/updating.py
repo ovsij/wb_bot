@@ -375,7 +375,8 @@ async def update_seller(seller, tariff : bool = None):
     orders = await Statistics.get_orders(db_request, seller)
     new_orders = []
     for order in orders:
-        new_order = db_request.create_order(gNumber=order['gNumber'],
+        new_order = db_request.create_order(seller_id=seller.id,
+                                gNumber=order['gNumber'],
                                 date=order['date'],
                                 lastChangeDate=order['lastChangeDate'],
                                 supplierArticle=order['supplierArticle'],
@@ -430,7 +431,8 @@ async def update_seller(seller, tariff : bool = None):
         sales = await Statistics.get_sales(db_request, seller)
         new_sales = []
         for sale in sales:
-            new_sale = db_request.create_sale(gNumber=sale['gNumber'],
+            new_sale = db_request.create_sale(seller_id=seller.id,
+                                gNumber=sale['gNumber'],
                                 date=sale['date'],
                                 lastChangeDate=sale['lastChangeDate'],
                                 supplierArticle=sale['supplierArticle'],

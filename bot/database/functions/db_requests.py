@@ -428,7 +428,8 @@ class DbRequests:
 
     """Order requests"""
     @db_session()
-    def create_order(self, gNumber : str, 
+    def create_order(self, seller_id : str,
+                     gNumber : str, 
                      date : datetime, 
                      lastChangeDate : datetime, 
                      supplierArticle : str, 
@@ -450,7 +451,7 @@ class DbRequests:
                      srid : str, 
                      orderType : str, ):
         if not Order.exists(odid=odid):
-            product = Product.get(barcode=barcode)
+            product = Product.get(barcode=barcode, seller=Seller[seller_id])
             if not product:
                 #print(f'product {barcode} не найден')
                 return
@@ -535,7 +536,8 @@ class DbRequests:
 
     """Sales requests"""
     @db_session()
-    def create_sale(self, gNumber : str, 
+    def create_sale(self, seller_id : str,
+                     gNumber : str, 
                      date : datetime, 
                      lastChangeDate : datetime, 
                      supplierArticle : str, 
@@ -563,7 +565,7 @@ class DbRequests:
                      sticker : str, 
                      srid : str, ):
         if not Sale.exists(odid=odid):
-            product = Product.get(barcode=barcode)
+            product = Product.get(barcode=barcode, seller=Seller[seller_id])
             if not product:
                 return
             try:
