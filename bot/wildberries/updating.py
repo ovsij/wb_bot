@@ -42,6 +42,7 @@ LOGISTICS = {
     'Новосибирск': 134,
 }
 async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_total : int, search=None):
+    seller = db_request.get_seller(id=employee.seller.id)
     order = db_request.get_order(id=order_id)
     product = db_request.get_product(id=order.product.id)
     price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
@@ -90,6 +91,8 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         logistic_price = ''
 
     text = as_line(order.date,
+                   seller.name,
+                   '',
                    f'🛒 Заказ [{len(today_orders) - minus_total}]: {price}₽',
                    f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
                    f'🆔 Арт: {order.nmId} 👉🏻',
@@ -167,6 +170,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         
 
 async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_total : int):
+    seller = db_request.get_seller(id=employee.seller.id)
     sale = db_request.get_sale(id=sale_id)
     sales_order = db_request.get_order(odid=sale.odid)
     date_from_order = (sale.date - sales_order.date).days
@@ -210,6 +214,8 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
         logistic_price = ''
     sale_type = '✅ Выкуп' if sale.saleID.startswith('S') else '⛔️ Отмена'
     text = as_line(sale.date,
+                   seller.name,
+                   '',
                    f'{sale_type} [{len(today_orders) - minus_total}]: {price}₽',
                    f'⏱️ От даты заказа: {date_from_order} дн.',
                    f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
@@ -289,7 +295,6 @@ async def inline_kb_add_order(db_request, order_id, minus_total):
     today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
     price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
     sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
-    spp = [s['spp'] for s in sales_list if s['nmId'] == order.nmId][-1]
     try:
         logistic_price = f": {LOGISTICS[order.warehouseName]}₽"
     except:
@@ -297,7 +302,6 @@ async def inline_kb_add_order(db_request, order_id, minus_total):
     text = as_line('', 
                    order.date,
                    f'🛒 Заказ [{len(today_orders) - minus_total}]: {price}₽',
-                   f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
                    f'💼 Комиссия базовая: {round(price * (1 - 19/100), 2)}₽ (19%)',
                    f'🌐 {order.warehouseName} → {order.oblast}{logistic_price}',
                    sep='\n')
