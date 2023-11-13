@@ -415,13 +415,12 @@ async def update_seller(seller, tariff : bool = None):
             if len(new_orders) == 1:
                 text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=0, search=True)
             elif len(new_orders) > 1:
-                for order in new_orders[:4]:
-                    text, reply_markup = await inline_kb_new_order(db_request, order_id=order.id, employee=employee, minus_total=total_new_orders)
-                    if text:
-                        text += '\n➕ в том числе 👇🏻\n'
-                        for order in new_orders[2:4]:
-                            text += await inline_kb_add_order(db_request, order_id=order.id, minus_total=total_new_orders)
-                            total_new_orders -= 1
+                text, reply_markup = await inline_kb_new_order(db_request, order_id=order[0].id, employee=employee, minus_total=total_new_orders)
+                if text:
+                    text += '\n➕ в том числе 👇🏻\n'
+                    for order in new_orders[1:3]:
+                        text += await inline_kb_add_order(db_request, order_id=order.id, minus_total=total_new_orders)
+                        total_new_orders -= 1
             if text:
                 user = db_request.get_user(id=employee.user.id)
                 try:
