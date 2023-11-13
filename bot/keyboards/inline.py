@@ -1076,7 +1076,7 @@ def inline_kb_reports_byperiod(db_request, state, tg_id : str, period : str, pag
                                     f"🛒 Заказы:        {len(article_orders)} на {'{0:,}'.format(int(sum(article_orders))).replace(',', ' ')}₽",
                                     f"💳 Выкупы:       {len(article_sales)} на {'{0:,}'.format(int(sum(article_sales))).replace(',', ' ')}₽",
                                     f'↩️ Возвраты:    {len(article_returns)}',
-                                    f'📁 {db_request.get_product(nmId=article).subject}',
+                                    f'📁 {db_request.get_product(nmId=article, seller_id=seller.id).subject}',
                                     as_line(f"🏷 {seller.name} / ", Underline(TextLink(db_request.get_product(nmId=article, seller_id=seller.id).supplierArticle, url=f'https://www.wildberries.ru/catalog/{article}/detail.aspx'))),
                                     sep='\n', 
                                     )
