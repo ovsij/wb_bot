@@ -136,7 +136,10 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
             today_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=True)
             yesterday_keyword = db_request.get_keyword(keyword=df_sort.iloc[i]['keyword'], is_today=False)
             if yesterday_keyword:
-                difference = get_difference(article=int(order.nmId), today=today_keyword, yesterday=yesterday_keyword)
+                try:
+                    difference = get_difference(article=int(order.nmId), today=today_keyword, yesterday=yesterday_keyword)
+                except:
+                    difference = ''
             else:
                 difference = ''
             text += as_line(df_sort.iloc[i]['keyword'],
