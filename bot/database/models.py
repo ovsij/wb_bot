@@ -2,6 +2,7 @@ from aiogram.types import Message
 from datetime import datetime, timedelta
 from decimal import Decimal
 from pony.orm import *
+from secrets import token_hex
 
 from bot.database.enum import *
 
@@ -27,6 +28,7 @@ class User(db.Entity):
     transactions = Set("Transaction")
     sellers = Set("User_Seller")
     logs = Set("Log")
+    export_token = Optional(str, default=token_hex(15))
     stock_sorting = Optional(StockSorting, default=StockSorting.stockDESC)
     reports_groupby = Optional(ReportsGroupBy, default=ReportsGroupBy.WITHOUTGROUP)
     reports_groupby_period = Optional(ReportsGroupByPeriod, default=ReportsGroupByPeriod.WITHOUTGROUP)

@@ -420,4 +420,17 @@ async def user_callback_query_handler(callback_query: types.CallbackQuery, state
         await state.update_data(msg_to_delete=msg)
         await state.update_data(msg_to_edit=callback_query.message)
 
+    if 'reissuetoken' in code:
+        if '_access' in code:
+            from secrets import token_hex
+            db_request.update_user(tg_id=tg_id, updated_fields={'export_token': token_hex(15)})
+            text, reply_markup = inline_kb_token(db_request, tg_id=tg_id)
+            await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+        elif '_deny' in code:
+            text, reply_markup = inline_kb_token(db_request, tg_id=tg_id)
+            await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+        else:
+            text, reply_markup = inline_kb_reissuetoken()
+            await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+
             

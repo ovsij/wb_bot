@@ -424,7 +424,7 @@ async def update_seller(seller, tariff : bool = None):
             if text:
                 user = db_request.get_user(id=employee.user.id)
                 try:
-                    photo = FSInputFile(f'bot/database/images/{order.nmId}.jpg', 'rb')
+                    photo = FSInputFile(f'bot/database/images/{new_orders[0].nmId}.jpg', 'rb')
                     await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
                 except Exception as ex:
                     logging.warning(ex)

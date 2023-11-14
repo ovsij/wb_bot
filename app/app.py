@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
 from string import Template
 
 
@@ -28,6 +29,13 @@ def create_page(requests, article):
 def get_keyword(article):
     return select(k for k in KeyWord if int(article) in k.search_1 or int(article) in k.search_2 or int(article) in k.search_3 and k.is_today == True)[:]
 
+@db_session()
+def get_user(tg_id):
+    return User.get(tg_id=tg_id)
+
+@db_session()
+def get_product(seller_id):
+    return select(p for p in Product if p.seller.id == seller_id)[:]
 
 @api.get('/search/{article}', response_class=HTMLResponse)
 def search(article : str):
@@ -40,3 +48,49 @@ def search(article : str):
         search_results.append({keyword.keyword: [page_id, index, keyword.requests, keyword.total]})
 
     return create_page(requests=search_results, article=article)
+
+class Parameters(BaseModel):
+    user : str
+    token : str
+    search : str
+    date1 : str
+    date2 : str
+    group : bool
+    group2 : bool
+
+@api.get('/export/main')
+def main(data : Parameters):
+    user = get_user(tg_id=user)
+    if data.token == user.export_token:
+        sellers_ids = [us.seller.id for us in user.seller if us.seller.is_active]
+        print(sellers_ids)
+        for seller_id in sellers_ids:
+            products = get_product(seller_id)
+
+@api.get('/export/subject')
+def subject(data : Parameters):
+    pass
+
+@api.get('/export/inway')
+def inway(data : Parameters):
+    pass
+
+@api.get('/export/orders')
+def orders(data : Parameters):
+    pass
+
+@api.get('/export/sales')
+def sales(data : Parameters):
+    pass
+
+@api.get('/export/return')
+def return_(data : Parameters):
+    pass
+
+@api.get('/export/penalties')
+def penalties(data : Parameters):
+    pass
+
+@api.get('/export/reportDetail')
+def reportDetail(data : Parameters):
+    pass

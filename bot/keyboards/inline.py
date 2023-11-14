@@ -1479,3 +1479,40 @@ def inline_kb_searchresult(url):
     ]
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, button_type=['web_app'])
     return text, reply_markup
+
+def inline_kb_export():
+    text = as_line(Bold('📑 Подключение Google таблиц.'),
+                   '',
+                   'Отслеживайте продажи, остатки и другую полезную информацию в Google таблицах в реальном времени.',
+                   '',
+                   Bold('Всего 3️⃣ простых шага.'),
+                   as_line('1. Откройте на компьютере или ноутбуке эту Google Таблицу 👉🏻', TextLink('WbConciergeBot v0.1', url='t.me')),
+                   '2. Скопируйте ее в свой Google аккаунт, для этого выберите в меню таблицы Файл - Создать копию.',
+                   '3. Измените пустые значения "ID" и "Token Export" на указанные ниже.',
+                   '',
+                   TextLink('📹 Как подключить (смотри видео)', url='https://www.youtube.com/watch?v=Jz3_xAVxy5g'),
+                   sep='\n')
+    return text.as_html()
+
+def inline_kb_token(db_request, tg_id):
+    user = db_request.get_user(tg_id=tg_id)
+    text = as_line('Token Export: ', Code(user.export_token))
+
+    text_and_data = [
+        ['🔄 Перевыпустить Token', 'reissuetoken']
+    ]
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
+    return text.as_html(), reply_markup
+
+def inline_kb_reissuetoken():
+    text = as_line('Вы уверены, что хотите перевыпустить Token Export?',
+                   '',
+                   'Данные в Google-таблице станут недоступны, пока вы не внесете новый Token во вкладку Настройки.',
+                   sep='\n')
+    text_and_data = [
+        ['✅ Да', 'reissuetoken_access'],
+        ['❌ Нет', 'reissuetoken_deny']
+    ]
+    schema = [2]
+    reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
+    return text.as_html(), reply_markup

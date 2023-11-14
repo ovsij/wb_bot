@@ -3,6 +3,7 @@ import asyncio
 from aiogram.types import Message
 from aiogram import Router
 from aiogram.filters import Command
+from aiogram.utils.formatting import Code
 from aiogram.fsm.context import FSMContext
 from aiogram.enums.parse_mode import ParseMode
 
@@ -84,131 +85,29 @@ async def cmd_news(message: Message, db_request: DbRequests):
     await message.delete()
 
 @user_commands_router.message(Command("stock"))
-async def cmd_stocks(message: Message, db_request: DbRequests):
+async def cmd_stock(message: Message, db_request: DbRequests):
     text, reply_markup = inline_kb_stocks(db_request, tg_id=str(message.from_user.id))
     await message.answer(text=text, reply_markup=reply_markup)
     await message.delete()    
 
 @user_commands_router.message(Command("reports"))
-async def cmd_stocks(message: Message, db_request: DbRequests):
+async def cmd_reports(message: Message, db_request: DbRequests):
     text, reply_markup = inline_kb_reports(db_request, tg_id=str(message.from_user.id))
     await message.answer(text=text, reply_markup=reply_markup)
 
 @user_commands_router.message(Command("search"))
-async def cmd_stocks(message: Message, state: FSMContext):
+async def cmd_search(message: Message, state: FSMContext):
     await state.set_state(Form.search_keywords)
     text = inline_kb_search_keywords()
     await message.answer(text=text, parse_mode='HTML')
 
+@user_commands_router.message(Command("export"))
+async def cmd_export(message: Message, db_request: DbRequests):
+    text = inline_kb_export()
+    await message.answer(text=text)
 
-import aiohttp
-from tqdm import tqdm
-import concurrent.futures
-import requests
-@user_commands_router.message(Command("create"))
-async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
-    print('create keywords')
-    db_request.create_keywords()
-    print('finish create keywords')
+    text = as_line(f'ID: ', Code(str(message.from_user.id)))
+    await message.answer(text=text.as_html())
 
-@user_commands_router.message(Command("uncreate"))
-async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
-    print('uncreate keywords')
-    keywords = db_request.get_keywords()
-    for k in keywords:
-        db_request.update_keyword(id=k[0], search=None, total=None)
-    print('finish uncreate keywords')
-
-@user_commands_router.message(Command("go"))
-async def cmd_stocks(message: Message, state: FSMContext, db_request: DbRequests):
-    print('start')
-    keywords = db_request.get_keywords()
-    print('keywords extracted from db')
-    
-    start = datetime.now()
-    #async with aiohttp.ClientSession(trust_env=True) as session:
-    session = aiohttp.ClientSession(trust_env=True)
-    r_session = requests.Session()
-
-    
-    for i in range(1, 100):
-        tasks = set()
-        for keyword in keywords[(i - 1) * 100000:i * 10000]:
-            tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
-        await asyncio.gather(*tasks)
-
-    """CONNECTIONS = 4
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
-        future_to_url = [executor.submit(get_request_classic, keyword) for keyword in keywords[:100000]]
-        for future in tqdm(concurrent.futures.as_completed(future_to_url), total=len(keywords[:100000])):
-            try:
-                data = future.result() 
-                db_request.update_keyword(id=data['keyword'], search=data['search'], total=data['total'])
-            except Exception as exc:   
-                print(exc) """
-                
-    
-            
-        #await get_request(db_request, keyword, start, session)
-        #tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session)))
-    #await asyncio.gather(*tasks)
-    #print('tasks created')
-    #await session.close()
-    end = datetime.now()
-    print(f'Time {end-start}')
-            
-
-async def get_request(db_request, keyword, start, session):
-    
-    url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
-    params_first = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
-    async with session.get(url, params=params_first, ssl=False) as response:
-        result = await response.json(content_type='text/plain')
-        total = result['data']['total']
-        print(total)
-    print(keyword)
-    products = []
-    for page in range(1, 4):
-        params_second = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[1]), 'resultset': 'catalog', 'sort':'popular', 'suppressSpellcheck': 'false'}
-        async with session.get(url, params=params_second, ssl=False) as response:
-            if response.status == 200:
-                try:
-                    result = await response.json(content_type='text/plain')
-                    page_products = [p['id'] for p in result['data']['products']]
-                    products.append({page: page_products})
-                    print(page)
-                except:
-                    print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-            else:
-                print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    db_request.update_keyword(id=keyword[0], search=products, total=total)
-
-
-def get_request_classic(keyword):
-    
-    url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
-    params_first = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[1], 'resultset': 'filters'}
-    response = requests.get(url, params=params_first)
-    result = response.json()
-    total = result['data']['total']
-    #print(keyword)
-    #print(total)
-    
-    products = []
-    for page in range(1, 4):
-        params_second = {'TestGroup': 'control', 'TestID':351, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'page': page, 'query':str(keyword[1]), 'resultset': 'catalog', 'sort':'popular', 'suppressSpellcheck': 'false'}
-        response = requests.get(url, params=params_second)
-        if response.status_code == 200:
-            try:
-                result = response.json()
-                page_products = [p['id'] for p in result['data']['products']]
-                products.append({page: page_products})
-                #print(page)
-            except:
-                print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        else:
-            print('НЕ ПРОШЕЛ ЗАПРОС!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-    #print(products)
-    return {'keyword': keyword[0], 'search': products, 'total': total}
-    
+    text, reply_markup = inline_kb_token(db_request, tg_id=str(message.from_user.id))
+    await message.answer(text=text, reply_markup=reply_markup)
