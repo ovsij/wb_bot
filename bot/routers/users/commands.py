@@ -7,11 +7,14 @@ from aiogram.utils.formatting import Code
 from aiogram.fsm.context import FSMContext
 from aiogram.enums.parse_mode import ParseMode
 
+import logging
+
 from bot.database.database import *
 from bot.database.functions.db_requests import DbRequests
 from bot.keyboards import *
 from bot.wildberries import *
 from bot.utils.states import *
+from bot.utils.abc_analysis import get_abc
 
 user_commands_router = Router()
 
@@ -111,3 +114,62 @@ async def cmd_export(message: Message, db_request: DbRequests):
 
     text, reply_markup = inline_kb_token(db_request, tg_id=str(message.from_user.id))
     await message.answer(text=text, reply_markup=reply_markup)
+
+@user_commands_router.message(Command("create"))
+async def cmd_create(message: Message, db_request: DbRequests):
+    logging.info('Creating')
+    user = db_request.get_user(tg_id=str(message.from_user.id))
+    sellers_ids = [s.id for s in db_request.get_seller(user_id=user.id) if s.is_active]
+    products = db_request.get_product(seller_id=sellers_ids)
+  
+    for p in products:
+        start = datetime.now()
+        print(f'start {p} - {start}')
+        size = p.techSize if p.techSize != '0' else ''
+        seller = db_request.get_seller(id=p.seller.id)
+        stock = sum([pw.quantity for pw in db_request.get_product_warehouse(product_id=p.id)])
+        orders = db_request.get_order(product_id=p.id, period=f"{(datetime.now() - timedelta(days=1000)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+        orders_90 = len(db_request.get_order(product_id=p.id, period=f"{(datetime.now() - timedelta(days=90)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"))
+        orders_30 = len(db_request.get_order(product_id=p.id, period=f"{(datetime.now() - timedelta(days=30)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"))
+        orders_14 = len(db_request.get_order(product_id=p.id, period=f"{(datetime.now() - timedelta(days=14)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"))
+        try:
+            quantity_till = int(stock / (orders_90 / 90))
+        except:
+            quantity_till = 0
+        employee = db_request.get_employee(user_id=user.id, seller_id=p.seller.id)
+        orders_N = len(db_request.get_order(product_id=p.id, period=f"{(datetime.now() - timedelta(days=employee.stock_reserve)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"))
+        forsupply_14 = 0 if orders_14 <= stock else int((orders_14 / 14) * 14 - stock)
+        forsupply_N = 0 if orders_N <= stock else int((orders_N / 14) * 14 - stock)
+        sales_90 = db_request.get_sale(product_id=p.id, period=f"{(datetime.now() - timedelta(days=90)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}", type='S')
+        print(sales_90)
+        print('-----------')
+        #buyout
+        gnumbers = [s['gNumber'] for s in sales_90]
+        
+        orders_list = [o for o in orders if o['gNumber'] in gnumbers]
+        try:
+            buyout = int((len(sales_90) / len(orders_list)) * 100)
+        except:
+            buyout = 0
+        abc, abc_percent = get_abc(db_request, product_id=p.id, seller_id=seller.id)
+        result = [f'{p.nmId}_{size}', p.nmId, size, seller.name, p.supplierArticle, stock, quantity_till, orders_90, orders_30, orders_14, employee.stock_reserve, forsupply_14, forsupply_N, len(sales_90), buyout, p.rating, datetime.now().strftime('%d.%m.%Y %H:%M'), abc_percent, abc]
+        db_request.create_exportmain(seller_id=seller.id,
+                                     nmId_size=f'{p.nmId}_{size}',
+                                     nmId=p.nmId,
+                                     size=size,
+                                     seller_name=seller.name,
+                                     product_name=p.supplierArticle,
+                                     quantity=stock,
+                                     quantity_till=quantity_till,
+                                     orders_90=orders_90,
+                                     orders_30=orders_30,
+                                     orders_14=orders_14,
+                                     stock_reserve=employee.stock_reserve,
+                                     forsupply_14=forsupply_14,
+                                     forsupply_N=forsupply_N,
+                                     sales_90=len(sales_90),
+                                     buyout=buyout,
+                                     rating=p.rating,
+                                     updatet_at=datetime.now(),
+                                     abc_percent=abc_percent,
+                                     abc=abc)

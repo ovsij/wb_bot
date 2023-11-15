@@ -718,3 +718,70 @@ class DbRequests:
                     k.delete()
                 else:
                     k.is_today = True
+
+    
+    """ExportMain requests"""
+    @db_session()
+    def create_exportmain(self, 
+                          seller_id : int,
+                          nmId_size : str,
+                          nmId : str,
+                          size : str,
+                          seller_name : str,
+                          product_name : str,
+                          quantity : int,
+                          quantity_till : int,
+                          orders_90 : int,
+                          orders_30 : int,
+                          orders_14 : int,
+                          stock_reserve : int,
+                          forsupply_14 : int,
+                          forsupply_N : int,
+                          sales_90 : int,
+                          buyout : int,
+                          rating : int,
+                          updatet_at : datetime,
+                          abc_percent : int,
+                          abc : str, ):
+        seller = Seller[seller_id]
+        if not ExportMain.exists(seller=seller, nmId=nmId):
+            ExportMain(seller=seller,
+                       nmId_size=nmId_size,
+                       nmId=nmId,
+                       size=size,
+                       seller_name=seller_name,
+                       product_name=product_name,
+                       quantity=quantity,
+                       quantity_till=quantity_till,
+                       orders_90=orders_90,
+                       orders_30=orders_30,
+                       orders_14=orders_14,
+                       stock_reserve=stock_reserve,
+                       forsupply_14=forsupply_14,
+                       forsupply_N=forsupply_N,
+                       sales_90=sales_90,
+                       buyout=buyout,
+                       rating=rating,
+                       updatet_at=updatet_at,
+                       abc_percent=abc_percent,
+                       abc=abc, )
+        else:
+            exportmain_to_update = ExportMain.get(seller=seller, nmId=nmId)
+            exportmain_to_update.nmId_size=nmId_size
+            exportmain_to_update.size=size
+            exportmain_to_update.seller_name=seller_name
+            exportmain_to_update.product_name=product_name
+            exportmain_to_update.quantity=quantity
+            exportmain_to_update.quantity_till=quantity_till
+            exportmain_to_update.orders_90=orders_90
+            exportmain_to_update.orders_30=orders_30
+            exportmain_to_update.orders_14=orders_14
+            exportmain_to_update.stock_reserve=stock_reserve
+            exportmain_to_update.forsupply_14=forsupply_14
+            exportmain_to_update.forsupply_N=forsupply_N
+            exportmain_to_update.sales_90=sales_90
+            exportmain_to_update.buyout=buyout
+            exportmain_to_update.rating=rating
+            exportmain_to_update.updatet_at=updatet_at
+            exportmain_to_update.abc_percent=abc_percent
+            exportmain_to_update.abc=abc

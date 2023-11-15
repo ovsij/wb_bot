@@ -377,60 +377,60 @@ async def update_seller(seller, tariff : bool = None):
     except Exception as ex:
         logging.warning(f'{seller} stock ex - {ex}')
     """UPDATING ORDERS"""
-    #try:
-    logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
-    orders = await Statistics.get_orders(db_request, seller)
-    new_orders = []
-    for order in orders:
-        new_order = db_request.create_order(seller_id=seller.id,
-                                gNumber=order['gNumber'],
-                                date=order['date'],
-                                lastChangeDate=order['lastChangeDate'],
-                                supplierArticle=order['supplierArticle'],
-                                techSize=order['techSize'],
-                                barcode=order['barcode'],
-                                totalPrice=order['totalPrice'],
-                                discountPercent=order['discountPercent'],
-                                warehouseName=order['warehouseName'],
-                                oblast=order['oblast'],
-                                incomeID=order['incomeID'],
-                                odid=order['odid'],
-                                nmId=order['nmId'],
-                                subject=order['subject'],
-                                category=order['category'],
-                                brand=order['brand'],
-                                isCancel=order['isCancel'],
-                                cancel_dt=order['cancel_dt'],
-                                sticker=order['sticker'],
-                                srid=order['srid'],
-                                orderType=order['orderType'],)
-        await asyncio.sleep(0.00001)
-        if new_order != None:
-            new_orders.append(new_order)
-    total_new_orders = len(new_orders[2:4])
-    
-    for employee in db_request.get_employee(seller_id=seller.id):
-        if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
-            text = None
-            if len(new_orders) == 1:
-                text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=0, search=True)
-            elif len(new_orders) > 1:
-                text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=total_new_orders)
+    try:
+        logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
+        orders = await Statistics.get_orders(db_request, seller)
+        new_orders = []
+        for order in orders:
+            new_order = db_request.create_order(seller_id=seller.id,
+                                    gNumber=order['gNumber'],
+                                    date=order['date'],
+                                    lastChangeDate=order['lastChangeDate'],
+                                    supplierArticle=order['supplierArticle'],
+                                    techSize=order['techSize'],
+                                    barcode=order['barcode'],
+                                    totalPrice=order['totalPrice'],
+                                    discountPercent=order['discountPercent'],
+                                    warehouseName=order['warehouseName'],
+                                    oblast=order['oblast'],
+                                    incomeID=order['incomeID'],
+                                    odid=order['odid'],
+                                    nmId=order['nmId'],
+                                    subject=order['subject'],
+                                    category=order['category'],
+                                    brand=order['brand'],
+                                    isCancel=order['isCancel'],
+                                    cancel_dt=order['cancel_dt'],
+                                    sticker=order['sticker'],
+                                    srid=order['srid'],
+                                    orderType=order['orderType'],)
+            await asyncio.sleep(0.00001)
+            if new_order != None:
+                new_orders.append(new_order)
+        total_new_orders = len(new_orders[2:4])
+        
+        for employee in db_request.get_employee(seller_id=seller.id):
+            if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
+                text = None
+                if len(new_orders) == 1:
+                    text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=0, search=True)
+                elif len(new_orders) > 1:
+                    text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=total_new_orders)
+                    if text:
+                        text += '\n➕ в том числе 👇🏻\n'
+                        for order in new_orders[1:3]:
+                            text += await inline_kb_add_order(db_request, order_id=order.id, minus_total=total_new_orders)
+                            total_new_orders -= 1
                 if text:
-                    text += '\n➕ в том числе 👇🏻\n'
-                    for order in new_orders[1:3]:
-                        text += await inline_kb_add_order(db_request, order_id=order.id, minus_total=total_new_orders)
-                        total_new_orders -= 1
-            if text:
-                user = db_request.get_user(id=employee.user.id)
-                try:
-                    photo = FSInputFile(f'bot/database/images/{new_orders[0].nmId}.jpg', 'rb')
-                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                except Exception as ex:
-                    logging.warning(ex)
+                    user = db_request.get_user(id=employee.user.id)
+                    try:
+                        photo = FSInputFile(f'bot/database/images/{new_orders[0].nmId}.jpg', 'rb')
+                        await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                    except Exception as ex:
+                        logging.warning(ex)
             
-    #except Exception as ex:
-    #    logging.warning(f'{seller} orders ex - {ex}')
+    except Exception as ex:
+        logging.warning(f'{seller} orders ex - {ex}')
     """UPDATING SALES"""
     try:
         logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')

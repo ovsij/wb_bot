@@ -1,6 +1,7 @@
 from datetime import datetime
 from enum import Enum
 from pony.orm import *
+from pony.orm.dbapiprovider import StrConverter
 from secrets import token_hex
 
 
@@ -37,6 +38,21 @@ class ReportsGroupByPeriod(Enum):
     WEEKS = 'weeks'
     MONTHS = 'months'
     WITHOUTGROUP = 'withoutgroup'
+
+class EnumConverter(StrConverter):
+
+    def validate(self, val, obj=None):
+        if not isinstance(val, Enum):
+            raise ValueError('Must be an Enum.  Got {}'.format(type(val)))
+        return val
+
+    def py2sql(self, val):
+        return val.name
+
+    def sql2py(self, value):
+        # Any enum type can be used, so py_type ensures the correct one is used to create the enum instance
+        return self.py_type[value]
+    
 
 db = Database()
 
@@ -275,6 +291,7 @@ class KeyWord(db.Entity):
     is_today = Optional(bool, default=True)
 
 db.bind(provider='postgres', user='postgres', password=PG_PASS, host=PG_HOST, database='ninja')
+db.provider.converter_classes.append((Enum, EnumConverter))
 
 db.generate_mapping(create_tables=True)
 

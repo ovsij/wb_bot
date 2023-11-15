@@ -9,7 +9,6 @@ def get_abc(db_request, product_id, seller_id):
         sales_revenue = sum([s['priceWithDisc'] for s in sales_list])
         products_revenue[product_entity.id] = sales_revenue
         total_revenue += sales_revenue
-    
     sorted_products_revenue = sorted(products_revenue.items(), key=lambda item: item[1], reverse=True)
 
     cummulative_total = 0
