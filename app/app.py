@@ -7,7 +7,7 @@ from pydantic import BaseModel
 import re
 from string import Template
 
-from database import *
+from  app.database import *
 
 api = FastAPI()
 
