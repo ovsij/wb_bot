@@ -6,7 +6,7 @@ from environs import Env
 @dataclass
 class Bot:
     token: str
-    admin_ids: list[int]
+    admin_ids: list
     support_url: str
     oferta: str
     bot_url: str
