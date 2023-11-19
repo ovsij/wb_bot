@@ -20,9 +20,17 @@ class Postgres:
     database : str
 
 @dataclass
+class PostgresServer:
+    user : str
+    password : str
+    host : str
+    database : str
+
+@dataclass
 class Config:
     bot: Bot
     postgres : Postgres
+    postgres_server : PostgresServer
 
 def load_config(path: str = None):
     env = Env()
@@ -42,5 +50,11 @@ def load_config(path: str = None):
             password=env.str("DB_PASSWORD"),
             host=env.str("DB_HOST"),
             database=env.str("DB_DATABASE"),
+        ),
+        postgres_server=PostgresServer(
+            user=env.str("DBS_USER"),
+            password=env.str("DBS_PASSWORD"),
+            host=env.str("DBS_HOST"),
+            database=env.str("DBS_DATABASE"),
         )
     )
