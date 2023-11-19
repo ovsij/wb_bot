@@ -10,6 +10,7 @@ httpx
 multidict==6.0.4
 pandas
 pony==0.7.17
+psycopg2-binary
 python-dotenv==0.21.0
 requests==2.28.2
 SQLAlchemy==2.0.20
