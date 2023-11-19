@@ -7,7 +7,7 @@ from pydantic import BaseModel
 import re
 from string import Template
 
-from  app.database import *
+from  database import *
 
 api = FastAPI()
 
@@ -267,7 +267,7 @@ def orders(chatID, token, search=None, date1=None, date2=None, group=None, group
             period = f"{date1.replace('-', '.')} - {datetime.now().strftime('%d.%m.%Y')}" if not date2 else f"{date1.replace('-', '.')} - {date2.replace('-', '.')}"
         else:
             period = f"{(datetime.now() - timedelta(days=10)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active and s.id == 45]
+        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
         orders = []
         for seller_id in sellers_ids:
             seller_orders = get_order(seller_id=seller_id, select_for='reports', period=period, search=search)
@@ -323,7 +323,7 @@ def sales(chatID, token, search=None, date1=None, date2=None, group=None):
             period = f"{date1.replace('-', '.')} - {datetime.now().strftime('%d.%m.%Y')}" if not date2 else f"{date1.replace('-', '.')} - {date2.replace('-', '.')}"
         else:
             period = f"{(datetime.now() - timedelta(days=10)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active and s.id == 45]
+        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
         orders = []
         for seller_id in sellers_ids:
             seller_sales = get_sale(seller_id=seller_id, select_for='reports', period=period, search=search, type='S')
@@ -365,7 +365,7 @@ def return_(chatID, token, search=None, date1=None, date2=None, group=None):
             period = f"{date1.replace('-', '.')} - {datetime.now().strftime('%d.%m.%Y')}" if not date2 else f"{date1.replace('-', '.')} - {date2.replace('-', '.')}"
         else:
             period = f"{(datetime.now() - timedelta(days=10)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active and s.id == 45]
+        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
         orders = []
         for seller_id in sellers_ids:
             seller_sales = get_sale(seller_id=seller_id, select_for='reports', period=period, search=search, type='R')
@@ -407,7 +407,7 @@ def penalties(chatID, token, search=None, date1=None, date2=None, group=None):
             period = f"{date1.replace('-', '.')} - {datetime.now().strftime('%d.%m.%Y')}" if not date2 else f"{date1.replace('-', '.')} - {date2.replace('-', '.')}"
         else:
             period = f"{(datetime.now() - timedelta(days=10)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active and s.id == 45]
+        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
         orders = []
         for seller_id in sellers_ids:
             seller_sales = get_sale(seller_id=seller_id, select_for='reports', period=period, search=search, type='D')
