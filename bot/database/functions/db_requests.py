@@ -394,7 +394,7 @@ class DbRequests:
                               quantity_full=quantityFull, )
     
     @db_session()
-    def get_product(self, id : int = None, seller_id : int | list = None, nmId : str = None, in_favorites : int = None, in_archive : int = None):
+    def get_product(self, id : int = None, seller_id : int = None, nmId : str = None, in_favorites : int = None, in_archive : int = None):
         if id:
             return Product[id]
         elif seller_id and not nmId:
