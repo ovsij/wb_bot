@@ -1,12 +1,11 @@
 from datetime import datetime
 from enum import Enum
+import os
 from pony.orm import *
 from pony.orm.dbapiprovider import StrConverter
 from secrets import token_hex
-
-
-from config import *
-
+from dotenv import load_dotenv
+load_dotenv()
 
 
 class StockSorting(Enum):
@@ -316,7 +315,7 @@ class ExportMain(db.Entity):
     abc_percent = Optional(float)
     abc = Optional(str)
 
-db.bind(provider='postgres', user='postgres', password=PG_PASS, host=PG_HOST, database='ninja')
+db.bind(provider='postgres', user='postgres', password=os.getenv('PG_PASS'), host=os.getenv('PG_HOST'), database='ninja')
 db.provider.converter_classes.append((Enum, EnumConverter))
 
 db.generate_mapping(create_tables=True)

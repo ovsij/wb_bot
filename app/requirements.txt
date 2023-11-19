@@ -1,5 +1,6 @@
-fastapi==0.104.1
+fastapi
 pandas==1.5.3
 pony==0.7.17
+python-dotenv==0.21.0
 psycopg2-binary==2.9.9
-uvicorn==0.24.0.post1
+uvicorn
