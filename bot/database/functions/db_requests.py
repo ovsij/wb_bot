@@ -485,7 +485,7 @@ class DbRequests:
             return None
                   
     @db_session()
-    def get_order(self, id : int = None, odid : int = None, gNumber : int = None, seller_id : int = None, product_id : int = None, period : str = None, select_for : str = None, tg_id : str = None):
+    def get_order(self, id : int = None, odid : int = None, gNumber : int = None, seller_id : int = None, product_id : int = None, period : str = None, select_for : str = None, tg_id : str = None, search : str = None):
         if id:
             return Order[id]
         elif odid:
@@ -507,10 +507,13 @@ class DbRequests:
                 elif re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                     datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                     dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
-                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() >= datefrom and o.date.date() <= dateto)[:]
+                    if search: # для гугл таблиц
+                        query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() >= datefrom and o.date.date() <= dateto and str(o.odid) == search or str(o.nmId) == search or str(o.supplierArticle) == search)[:]
+                    else:
+                        query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() >= datefrom and o.date.date() <= dateto)[:]
                 else:
                     query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle) for o in Order if o.product.seller == Seller[seller_id])[:]
-                return [{'totalPrice': q[1], 'discountPercent': q[2], 'subject': q[3], 'nmId': q[4], 'brand': q[5], 'oblast': q[6], 'category': q[7], 'supplierArticle': q[8]} for q in query]
+                return [{'totalPrice': q[1], 'discountPercent': q[2], 'subject': q[3], 'nmId': q[4], 'brand': q[5], 'oblast': q[6], 'category': q[7], 'supplierArticle': q[8], 'techSize': q[9], 'date': q[10], 'srid': q[11], 'warehouseName': q[12]} for q in query]
             else:
                 if period == 'today':
                     return select(o for o in Order if o.product.seller == Seller[seller_id] and o.date.date() == date.today())[:]
@@ -609,7 +612,7 @@ class DbRequests:
         
 
     @db_session()
-    def get_sale(self, id : int = None, odid : int = None, seller_id : int = None, product_id : int = None, period : str = None, type : str = None, select_for : str = None, tg_id : str = None):
+    def get_sale(self, id : int = None, odid : int = None, seller_id : int = None, product_id : int = None, period : str = None, type : str = None, select_for : str = None, tg_id : str = None, search : str = None):
         if id:
             return Sale[id]
         elif odid:
@@ -629,10 +632,13 @@ class DbRequests:
                 elif re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                     datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                     dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
-                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type))[:]
+                    if search: # для гугл таблиц
+                        query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle, s.techSize, s.date, s.srid, s.warehouseName) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type) and str(o.odid) == search or str(o.nmId) == search or str(o.supplierArticle) == search)[:]
+                    else:
+                        query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle, s.techSize, s.date, s.srid, s.warehouseName) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type))[:]
                 else:
                     return select(s for s in Sale if s.product.seller == Seller[seller_id] and s.saleID.startswith(type))[:]
-                return [{'priceWithDisc': q[1], 'subject': q[2], 'nmId': q[3], 'brand': q[4], 'regionName': q[5], 'category': q[6], 'supplierArticle': q[7]} for q in query]
+                return [{'priceWithDisc': q[1], 'subject': q[2], 'nmId': q[3], 'brand': q[4], 'regionName': q[5], 'category': q[6], 'supplierArticle': q[7], 'techSize': q[8], 'date': q[9], 'srid': q[10], 'warehouseName': q[11]} for q in query]
             else:
                 if period == 'today':
                     return select(s for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() == date.today())[:]
@@ -785,3 +791,7 @@ class DbRequests:
             exportmain_to_update.updatet_at=updatet_at
             exportmain_to_update.abc_percent=abc_percent
             exportmain_to_update.abc=abc
+    
+    @db_session()
+    def get_exportmain(self, seller_id):
+        return select(ex for ex in ExportMain if ex.seller.id == seller_id)[:]

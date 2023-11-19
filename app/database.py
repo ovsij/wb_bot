@@ -96,6 +96,7 @@ class Seller(db.Entity):
     test_period = Optional(bool, default = False)
     products = Set("Product")
     users = Set("User_Seller")
+    exportmain = Set("ExportMain")
 
 
 class User_Seller(db.Entity):
@@ -289,6 +290,31 @@ class KeyWord(db.Entity):
     search_3 = Optional(IntArray, nullable=True)
     total = Optional(int, nullable=True)
     is_today = Optional(bool, default=True)
+
+class ExportMain(db.Entity):
+    __table_name__ = "exportmain"
+
+    id = PrimaryKey(int, auto=True)
+    seller = Optional(Seller)
+    nmId_size = Optional(str)
+    nmId = Optional(int)
+    size = Optional(str)
+    seller_name = Optional(str)
+    product_name = Optional(str)
+    quantity = Optional(int)
+    quantity_till = Optional(int)
+    orders_90 = Optional(int)
+    orders_30 = Optional(int)
+    orders_14 = Optional(int)
+    stock_reserve = Optional(int)
+    forsupply_14 = Optional(int)
+    forsupply_N = Optional(int)
+    sales_90 = Optional(int)
+    buyout = Optional(int)
+    rating = Optional(float)
+    updatet_at = Optional(datetime)
+    abc_percent = Optional(float)
+    abc = Optional(str)
 
 db.bind(provider='postgres', user='postgres', password=PG_PASS, host=PG_HOST, database='ninja')
 db.provider.converter_classes.append((Enum, EnumConverter))
