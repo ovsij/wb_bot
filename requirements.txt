@@ -6,7 +6,7 @@ emoji==2.2.0
 environs~=9.5.0
 fastapi
 httplib2==0.22.0
-httpx==0.25.0
+httpx
 multidict==6.0.4
 pandas==1.5.3
 pony==0.7.17
