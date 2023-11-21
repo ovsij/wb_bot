@@ -514,7 +514,7 @@ class DbRequests:
                     else:
                         query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() >= datefrom and o.date.date() <= dateto)[:]
                 else:
-                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle) for o in Order if o.product.seller == Seller[seller_id])[:]
+                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id])[:]
                 return [{'totalPrice': q[1], 'discountPercent': q[2], 'subject': q[3], 'nmId': q[4], 'brand': q[5], 'oblast': q[6], 'category': q[7], 'supplierArticle': q[8], 'techSize': q[9], 'date': q[10], 'srid': q[11], 'warehouseName': q[12]} for q in query]
             else:
                 if period == 'today':
@@ -622,15 +622,15 @@ class DbRequests:
         elif seller_id:
             if select_for == 'reports':
                 if period == 'today':
-                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() == date.today() and s.saleID.startswith(type))[:]
+                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle, s.techSize, s.date, s.srid, s.warehouseName) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() == date.today() and s.saleID.startswith(type))[:]
                 elif period == 'yesterday':
-                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() == date.today() - timedelta(days=1) and s.saleID.startswith(type))[:]
+                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle, s.techSize, s.date, s.srid, s.warehouseName) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() == date.today() - timedelta(days=1) and s.saleID.startswith(type))[:]
                 elif period == 'week':
-                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() >= date.today() - timedelta(days=8) and s.date.date() != date.today() and s.saleID.startswith(type))[:]
+                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle, s.techSize, s.date, s.srid, s.warehouseName) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() >= date.today() - timedelta(days=8) and s.date.date() != date.today() and s.saleID.startswith(type))[:]
                 elif period == 'month':
-                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() >= date.today() - timedelta(days=31) and s.date.date() != date.today() and s.saleID.startswith(type))[:]
+                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle, s.techSize, s.date, s.srid, s.warehouseName) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() >= date.today() - timedelta(days=31) and s.date.date() != date.today() and s.saleID.startswith(type))[:]
                 elif re.fullmatch('\d*.\d*.\d*', period):
-                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() == datetime.strptime(period, '%d.%m.%Y') and s.saleID.startswith(type))[:]
+                    query = select((s.id, s.priceWithDisc, s.subject, s.nmId, s.brand, s.regionName, s.category, s.supplierArticle, s.techSize, s.date, s.srid, s.warehouseName) for s in Sale if s.product.seller == Seller[seller_id] and s.date.date() == datetime.strptime(period, '%d.%m.%Y') and s.saleID.startswith(type))[:]
                 elif re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                     datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                     dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
