@@ -731,7 +731,7 @@ class DbRequests:
     """ExportMain requests"""
     @db_session()
     def create_exportmain(self, 
-                          seller_id : int,
+                          employee_id : int,
                           nmId_size : str,
                           nmId : str,
                           size : str,
@@ -751,9 +751,9 @@ class DbRequests:
                           updatet_at : datetime,
                           abc_percent : int,
                           abc : str, ):
-        seller = Seller[seller_id]
-        if not ExportMain.exists(seller=seller, nmId=nmId):
-            ExportMain(seller=seller,
+        employee = User_Seller[employee_id]
+        if not ExportMain.exists(employee=employee, nmId=nmId):
+            ExportMain(seller=employee,
                        nmId_size=nmId_size,
                        nmId=nmId,
                        size=size,
@@ -774,7 +774,7 @@ class DbRequests:
                        abc_percent=abc_percent,
                        abc=abc, )
         else:
-            exportmain_to_update = ExportMain.get(seller=seller, nmId=nmId)
+            exportmain_to_update = ExportMain.get(employee=employee, nmId=nmId)
             exportmain_to_update.nmId_size=nmId_size
             exportmain_to_update.size=size
             exportmain_to_update.seller_name=seller_name
