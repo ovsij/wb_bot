@@ -497,15 +497,15 @@ class DbRequests:
         elif seller_id:
             if select_for == 'reports':
                 if period == 'today':
-                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() == date.today())[:]
+                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() == date.today())[:]
                 elif period == 'yesterday':
-                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() == date.today() - timedelta(days=1))[:]
+                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() == date.today() - timedelta(days=1))[:]
                 elif period == 'week':
-                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() >= date.today() - timedelta(days=8) and o.date.date() != date.today())[:]
+                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() >= date.today() - timedelta(days=8) and o.date.date() != date.today())[:]
                 elif period == 'month':
-                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() >= date.today() - timedelta(days=31) and o.date.date() != date.today())[:]
+                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() >= date.today() - timedelta(days=31) and o.date.date() != date.today())[:]
                 elif re.fullmatch('\d*.\d*.\d*', period):
-                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() == datetime.strptime(period, '%d.%m.%Y'))[:]
+                    query = select((o.id, o.totalPrice, o.discountPercent, o.subject, o.nmId, o.brand, o.oblast, o.category, o.supplierArticle, o.techSize, o.date, o.srid, o.warehouseName) for o in Order if o.product.seller == Seller[seller_id] and o.date.date() == datetime.strptime(period, '%d.%m.%Y'))[:]
                 elif re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                     datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                     dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
