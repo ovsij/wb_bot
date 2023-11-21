@@ -145,7 +145,7 @@ async def reports_search_keywords(message: Message, db_request: DbRequests, stat
     print('art')
     print(article)
     if len(article) > 0:
-        url = f'https://wbconcierge-1-l1790708.deta.app/search/{article}'
+        url = f'https://wbconcierge.onrender.com/search/{article}'
         text, reply_markup = inline_kb_searchresult(url)
         await message.answer(text=text, reply_markup=reply_markup)
                     

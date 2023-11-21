@@ -270,7 +270,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
                             as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"), difference),
                             sep='\n')
             
-    url = f'https://wbconcierge-1-l1790708.deta.app/search/{sale.nmId}'
+    url = f'https://wbconcierge.onrender.com/search/{sale.nmId}'
     text_and_data = [
         ['Позиции в поиске 🔍', url]
     ]

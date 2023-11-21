@@ -95,7 +95,6 @@ class Seller(db.Entity):
     test_period = Optional(bool, default = False)
     products = Set("Product")
     users = Set("User_Seller")
-    exportmain = Set("ExportMain")
 
 
 class User_Seller(db.Entity):
@@ -122,6 +121,7 @@ class User_Seller(db.Entity):
     cancel_notif = Optional(bool, default=True)
     favorites = Set("Product", table="favorites")
     archive = Set("Product", table="archive")
+    exportmains = Set("ExportMain")
 
 
 class Product(db.Entity):
@@ -294,7 +294,7 @@ class ExportMain(db.Entity):
     __table_name__ = "exportmain"
 
     id = PrimaryKey(int, auto=True)
-    seller = Optional(Seller)
+    employee = Optional(User_Seller)
     nmId_size = Optional(str)
     nmId = Optional(int)
     size = Optional(str)
