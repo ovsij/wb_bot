@@ -323,7 +323,7 @@ async def update_sellers():
                     tasks.add(task)
 
         await asyncio.gather(*tasks)
-        logging.info('tasks update_sellers created')
+        logging.info(f'tasks update_sellers created: {datetime.now()}')
         await asyncio.sleep(900)
 
 async def update_seller(seller, tariff : bool = None):

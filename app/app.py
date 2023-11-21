@@ -201,6 +201,10 @@ def get_sale(id : int = None, odid : int = None, seller_id : int = None, product
         query = select((s.id, s.date, s.priceWithDisc, s.srid, s.nmId, s.subject, s.brand, s.supplierArticle, s.regionName, s.warehouseName) for s in Sale if s.product.seller in sellers and s.saleID.startswith(type)).order_by(lambda: desc(s.date))[:]
         return [{'date': q[1], 'priceWithDisc': q[2], 'srid': q[3], 'nmId': q[4], 'subject': q[5], 'brand': q[6], 'supplierArticle': q[7], 'oblast': q[8], 'warehouseName': q[9]} for q in query]
 
+@db_session
+def get_employee(user_id):
+    return select(u for u in User_Seller if u.seller.is_active and u.user.id == user_id)[:]
+
 
 @api.get('/search/{article}', response_class=HTMLResponse)
 def search(article : str):
@@ -221,12 +225,14 @@ BOT_VERSION = 'WbConviergeBot v.0.1'
 def main(chatID, token):
     user = get_user(tg_id=chatID)
     if token == user.export_token:
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
+        employee_ids = [e.id for e in get_employee(user_id=user.id)]
         export = []
-        for seller_id in sellers_ids:
-            exp = get_exportmain(seller_id) 
+        for employee_id in employee_ids:
+            exp = get_exportmain(employee_id) 
             for ex in exp:
                 export.append([ex.nmId_size, ex.nmId, ex.size,  ex.seller_name, ex.product_name, ex.quantity, ex.quantity_till, ex.orders_90, ex.orders_30, ex.orders_14, ex.stock_reserve, ex.forsupply_14, ex.forsupply_N, ex.sales_90, ex.buyout, ex.rating, ex.updatet_at, ex.abc_percent, ex.abc])   
+        
+        
         df = pd.DataFrame(export, columns=['загружено', BOT_VERSION, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
         stream = io.StringIO()
         df.to_csv(stream, index = False)
@@ -275,10 +281,7 @@ def orders(chatID, token, search=None, date1=None, date2=None, group : bool = No
                 size = s_o['techSize'] if s_o['techSize'] != '0' else ''
                 orders.append([f"{s_o['nmId']}_{size}", s_o['date'].strftime('%d-%m-%Y'), s_o['srid'], s_o['date'], s_o['subject'], s_o['category'], s_o['nmId'], size, s_o['supplierArticle'], 1, int(s_o['totalPrice'] * (1 - s_o['discountPercent'] / 100)), s_o['warehouseName'], s_o['oblast'], s_o['brand']])
         orders.sort(key=lambda x: x[3], reverse=True)
-        print(group)
-        print(group2)
         if group and not group2:
-            print('wtf1')
             orders_for_group = orders
             orders = {}
             for order in orders_for_group:
@@ -292,7 +295,6 @@ def orders(chatID, token, search=None, date1=None, date2=None, group : bool = No
                     orders[order[6]] = order
             orders = list(orders.values())
         elif group2:
-            print('wtf2')
             orders_for_group = orders
             orders = {}
             for order in orders_for_group:
@@ -304,9 +306,6 @@ def orders(chatID, token, search=None, date1=None, date2=None, group : bool = No
                     
                     new_order = [order[0], order[1], order[9], order[10], '', '', '', '', '', '', '', '', '', '']
                     orders[f'{order[6]}-{order[1]}'] = new_order
-            print(orders)
-                    
-
             orders = list(orders.values())
             
 

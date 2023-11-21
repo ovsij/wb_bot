@@ -249,7 +249,7 @@ class ExportMain(db.Entity):
     __table_name__ = "exportmain"
 
     id = PrimaryKey(int, auto=True)
-    seller = Optional(Seller)
+    employee = Optional(User_Seller)
     nmId_size = Optional(str)
     nmId = Optional(int)
     size = Optional(str)

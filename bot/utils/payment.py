@@ -9,7 +9,7 @@ from bot.database.functions.db_requests import DbRequests
 DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 async def regular_payment():
-    print('regular_payment start')
+    print(f'regular_payment start: {datetime.now()}')
     while True:
         db_request = DbRequests()
         tasks = set()
@@ -23,7 +23,7 @@ async def regular_payment():
                     task = asyncio.create_task(payment(db_request, seller))
                     tasks.add(task)
         await asyncio.gather(*tasks)
-        print('tasks regular_payment created')
+        print(f'tasks regular_payment created: {datetime.now()}')
         await asyncio.sleep(1800)
             
 
@@ -64,7 +64,7 @@ async def payment(db_request, seller):
 
 
 async def regular_check_test_period():
-    print('regular_check_test_period start')
+    print(f'regular_check_test_period start: {datetime.now()}')
     while True:
         db_request = DbRequests()
         # iterate all sellers in test period
@@ -73,7 +73,7 @@ async def regular_check_test_period():
             task = asyncio.create_task(check_test_period(db_request, seller))
             tasks.add(task)
         await asyncio.gather(*tasks)
-        print('tasks regular_check_test_period created')
+        print(f'tasks regular_check_test_period created: {datetime.now()}')
         await asyncio.sleep(1800)
             
 

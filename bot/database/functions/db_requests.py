@@ -160,7 +160,7 @@ class DbRequests:
         return User_Seller.exists(user=User[user_id])
     
     @db_session()
-    def get_employee(self, id : int = None, seller_id : int = None, user_id : int = None, balance : bool = None):
+    def get_employee(self, id : int = None, seller_id : int = None, user_id : int = None, balance : bool = None, is_active : bool = None):
         if id:
             return User_Seller[id]
         if seller_id and not user_id:
@@ -172,6 +172,8 @@ class DbRequests:
             return select(u for u in User_Seller if u.seller.id == seller_id and u.user.id == user_id)[:][0]
         if user_id and not seller_id:
             return select(u for u in User_Seller if u.user.id == user_id)[:]
+        if is_active:
+            return select(u for u in User_Seller if u.seller.is_active)[:]
     
     @db_session()
     def update_employee(self, id : int, 

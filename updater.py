@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from bot.utils import regular_payment, regular_check_test_period
+from bot.utils import regular_payment, regular_check_test_period, update_mainexport
 from bot.wildberries import update_sellers
 
 logging.basicConfig(level=logging.INFO)
@@ -12,7 +12,8 @@ async def main():
     task1 = asyncio.create_task(update_sellers())
     task2 = asyncio.create_task(regular_payment())
     task3 = asyncio.create_task(regular_check_test_period())
-    await asyncio.gather(task1, task2, task3)
+    task4 = asyncio.create_task(update_mainexport())
+    await asyncio.gather(task1, task2, task3, task4)
 
 
 if __name__ == '__main__':
