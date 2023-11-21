@@ -753,7 +753,7 @@ class DbRequests:
                           abc : str, ):
         employee = User_Seller[employee_id]
         if not ExportMain.exists(employee=employee, nmId=nmId):
-            ExportMain(seller=employee,
+            ExportMain(employee=employee,
                        nmId_size=nmId_size,
                        nmId=nmId,
                        size=size,
@@ -793,7 +793,3 @@ class DbRequests:
             exportmain_to_update.updatet_at=updatet_at
             exportmain_to_update.abc_percent=abc_percent
             exportmain_to_update.abc=abc
-    
-    @db_session()
-    def get_exportmain(self, seller_id):
-        return select(ex for ex in ExportMain if ex.seller.id == seller_id)[:]

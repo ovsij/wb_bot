@@ -79,8 +79,8 @@ def get_seller(id : int = None, user_id : int = None, test_period : bool = None)
         return select(s for s in Seller)[:]
     
 @db_session()
-def get_exportmain(seller_id):
-    return select(ex for ex in ExportMain if ex.seller.id == seller_id)[:]
+def get_exportmain(employee_id):
+    return select(ex for ex in ExportMain if ex.employee.id == employee_id)[:]
 
 @db_session()
 def get_product(id : int = None, seller_id : int = None, nmId : str = None, in_favorites : int = None, in_archive : int = None):
