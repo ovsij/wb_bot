@@ -50,7 +50,6 @@ class Seller(db.Entity):
     test_period = Optional(bool, default = False)
     products = Set("Product")
     users = Set("User_Seller")
-    exportmains = Set("ExportMain")
 
 
 class User_Seller(db.Entity):
@@ -77,6 +76,7 @@ class User_Seller(db.Entity):
     cancel_notif = Optional(bool, default=True)
     favorites = Set("Product", table="favorites")
     archive = Set("Product", table="archive")
+    exportmains = Set("ExportMain")
 
 
 class Product(db.Entity):
