@@ -62,12 +62,15 @@ async def update(db_request, employee):
 async def update_mainexport():
     logging.info(f'update_mainexport start: {datetime.now()}')
     while True:
-        db_request = DbRequests()
-        # iterate all sellers in test period
-        tasks = set()
-        for employee in db_request.get_employee(is_active=True):
-            task = asyncio.create_task(update(db_request, employee))
-            tasks.add(task)
-        await asyncio.gather(*tasks)
-        logging.info(f'tasks update_mainexport created: {datetime.now()}')
-        await asyncio.sleep(15600)
+        try:
+            db_request = DbRequests()
+            # iterate all sellers in test period
+            tasks = set()
+            for employee in db_request.get_employee(is_active=True):
+                task = asyncio.create_task(update(db_request, employee))
+                tasks.add(task)
+            await asyncio.gather(*tasks)
+            logging.info(f'tasks update_mainexport created: {datetime.now()}')
+            await asyncio.sleep(15600)
+        except Exception as ex:
+            logging.info(ex)
