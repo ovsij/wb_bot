@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta
+import logging
 
 
 from bot.database.functions.db_requests import DbRequests
@@ -10,7 +11,6 @@ async def update(db_request, employee):
     products = db_request.get_product(seller_id=employee.seller.id)
     for p in products:
         start = datetime.now()
-        print(f'start {p} - {start}')
         size = p.techSize if p.techSize != '0' else ''
         seller = db_request.get_seller(id=p.seller.id)
         stock = sum([pw.quantity for pw in db_request.get_product_warehouse(product_id=p.id)])
@@ -27,8 +27,6 @@ async def update(db_request, employee):
         forsupply_14 = 0 if orders_14 <= stock else int((orders_14 / 14) * 14 - stock)
         forsupply_N = 0 if orders_N <= stock else int((orders_N / 14) * 14 - stock)
         sales_90 = db_request.get_sale(product_id=p.id, period=f"{(datetime.now() - timedelta(days=90)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}", type='S')
-        print(sales_90)
-        print('-----------')
         #buyout
         gnumbers = [s['gNumber'] for s in sales_90]
         
@@ -60,9 +58,9 @@ async def update(db_request, employee):
                                      abc_percent=abc_percent,
                                      abc=abc)
         
-        
+
 async def update_mainexport():
-    print(f'update_mainexport start: {datetime.now()}')
+    logging.info(f'update_mainexport start: {datetime.now()}')
     while True:
         db_request = DbRequests()
         # iterate all sellers in test period
@@ -71,5 +69,5 @@ async def update_mainexport():
             task = asyncio.create_task(update(db_request, employee))
             tasks.add(task)
         await asyncio.gather(*tasks)
-        print(f'tasks update_mainexport created: {datetime.now()}')
+        logging.info(f'tasks update_mainexport created: {datetime.now()}')
         await asyncio.sleep(15600)

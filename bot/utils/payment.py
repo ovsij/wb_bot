@@ -1,5 +1,6 @@
 import asyncio
 from datetime import date, datetime, timedelta
+import logging
 
 from bot import bot
 from bot.keyboards import *
@@ -9,21 +10,24 @@ from bot.database.functions.db_requests import DbRequests
 DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
 async def regular_payment():
-    print(f'regular_payment start: {datetime.now()}')
+    logging.info(f'regular_payment start: {datetime.now()}')
     while True:
-        db_request = DbRequests()
-        tasks = set()
-        for seller in db_request.get_seller(test_period=False):
-            try:
-                if (datetime.now() - seller.last_payment_date) > timedelta(hours=23.5):
-                    task = asyncio.create_task(payment(db_request, seller))
-                    tasks.add(task)
-            except:
-                if not seller.is_active:
-                    task = asyncio.create_task(payment(db_request, seller))
-                    tasks.add(task)
-        await asyncio.gather(*tasks)
-        print(f'tasks regular_payment created: {datetime.now()}')
+        try:
+            db_request = DbRequests()
+            tasks = set()
+            for seller in db_request.get_seller(test_period=False):
+                try:
+                    if (datetime.now() - seller.last_payment_date) > timedelta(hours=23.5):
+                        task = asyncio.create_task(payment(db_request, seller))
+                        tasks.add(task)
+                except:
+                    if not seller.is_active:
+                        task = asyncio.create_task(payment(db_request, seller))
+                        tasks.add(task)
+            await asyncio.gather(*tasks)
+            logging.info(f'tasks regular_payment created: {datetime.now()}')
+        except Exception as ex:
+            logging.info(ex)
         await asyncio.sleep(1800)
             
 
@@ -42,12 +46,11 @@ async def payment(db_request, seller):
                                                 seller_name=seller.name, 
                                                 )
                     db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
-                    print(f'User {employee} paid {paymet_sum}')
+                    logging.info(f'User {employee} paid {paymet_sum}')
                     continue
         try:
             seller = db_request.get_seller(id=seller.id)
             if (datetime.now() - seller.last_payment_date) > timedelta(hours=23.5):
-                print(datetime.now() - seller.last_payment_date)
                 db_request.update_seller(id=seller.id, is_active=False)
                 send_message = True
         except:
@@ -64,7 +67,7 @@ async def payment(db_request, seller):
 
 
 async def regular_check_test_period():
-    print(f'regular_check_test_period start: {datetime.now()}')
+    logging.info(f'regular_check_test_period start: {datetime.now()}')
     while True:
         db_request = DbRequests()
         # iterate all sellers in test period
@@ -73,7 +76,7 @@ async def regular_check_test_period():
             task = asyncio.create_task(check_test_period(db_request, seller))
             tasks.add(task)
         await asyncio.gather(*tasks)
-        print(f'tasks regular_check_test_period created: {datetime.now()}')
+        logging.info(f'tasks regular_check_test_period created: {datetime.now()}')
         await asyncio.sleep(1800)
             
 
@@ -94,7 +97,7 @@ async def check_test_period(db_request, seller):
                                                   tariff=f'{seller.tariff}₽/мес',
                                                   seller_name=seller.name, )
                     db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
-                    print(f'User {employee} paid {paymet_sum}')
+                    logging.info(f'User {employee} paid {paymet_sum}')
                     break
 
         seller = db_request.get_seller(id=seller.id)
