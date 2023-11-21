@@ -13,7 +13,7 @@ api = FastAPI()
 
 def create_page(requests, article):
 
-    with open('template.html', 'r') as file:
+    with open('./template.html', 'r') as file:
         html_content = file.read()
 
     url = f'https://www.wildberries.ru/catalog/{article}/detail.aspx'
