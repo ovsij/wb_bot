@@ -260,7 +260,7 @@ def inway(data):
     pass
 
 @api.get('/export/orders')
-def orders(chatID, token, search=None, date1=None, date2=None, group=None, group2=None):
+def orders(chatID, token, search=None, date1=None, date2=None, group : bool = None, group2=None, r=None):
     user = get_user(tg_id=chatID)
     if token == user.export_token:
         if date1:
@@ -275,8 +275,10 @@ def orders(chatID, token, search=None, date1=None, date2=None, group=None, group
                 size = s_o['techSize'] if s_o['techSize'] != '0' else ''
                 orders.append([f"{s_o['nmId']}_{size}", s_o['date'].strftime('%d-%m-%Y'), s_o['srid'], s_o['date'], s_o['subject'], s_o['category'], s_o['nmId'], size, s_o['supplierArticle'], 1, int(s_o['totalPrice'] * (1 - s_o['discountPercent'] / 100)), s_o['warehouseName'], s_o['oblast'], s_o['brand']])
         orders.sort(key=lambda x: x[3], reverse=True)
-        
+        print(group)
+        print(group2)
         if group and not group2:
+            print('wtf1')
             orders_for_group = orders
             orders = {}
             for order in orders_for_group:
@@ -290,6 +292,7 @@ def orders(chatID, token, search=None, date1=None, date2=None, group=None, group
                     orders[order[6]] = order
             orders = list(orders.values())
         elif group2:
+            print('wtf2')
             orders_for_group = orders
             orders = {}
             for order in orders_for_group:
@@ -316,7 +319,7 @@ def orders(chatID, token, search=None, date1=None, date2=None, group=None, group
         return response
 
 @api.get('/export/sales')
-def sales(chatID, token, search=None, date1=None, date2=None, group=None):
+def sales(chatID, token, search=None, date1=None, date2=None, group : bool = None):
     user = get_user(tg_id=chatID)
     if token == user.export_token:
         if date1:
@@ -358,7 +361,7 @@ def sales(chatID, token, search=None, date1=None, date2=None, group=None):
         return response
 
 @api.get('/export/return')
-def return_(chatID, token, search=None, date1=None, date2=None, group=None):
+def return_(chatID, token, search=None, date1=None, date2=None, group : bool = None):
     user = get_user(tg_id=chatID)
     if token == user.export_token:
         if date1:
@@ -400,7 +403,7 @@ def return_(chatID, token, search=None, date1=None, date2=None, group=None):
         return response
 
 @api.get('/export/penalties')
-def penalties(chatID, token, search=None, date1=None, date2=None, group=None):
+def penalties(chatID, token, search=None, date1=None, date2=None, group : bool = None):
     user = get_user(tg_id=chatID)
     if token == user.export_token:
         if date1:
