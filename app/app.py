@@ -7,7 +7,9 @@ from pydantic import BaseModel
 import re
 from string import Template
 
-from .database import *
+import requests
+
+from database import *
 
 api = FastAPI()
 
@@ -209,14 +211,14 @@ def get_employee(user_id):
 
 @api.get('/search/{article}', response_class=HTMLResponse)
 def search(article : str):
-    keywords = get_keywords(article=article)
+    keywords = get_keywords(article=article, is_today=True)
     search_results = []
     for keyword in keywords:
         page_id = 1 if int(article) in keyword.search_1 else 2 if int(article) in keyword.search_2 else 3
         page_list = keyword.search_1 if page_id == 1 else keyword.search_2 if page_id == 2 else keyword.search_3
         index = page_list.index(int(article)) + 1
         search_results.append({keyword.keyword: [page_id, index, keyword.requests, keyword.total]})
-
+    
     return create_page(requests=search_results, article=article)
 
 BOT_VERSION = 'WbConviergeBot v.0.1'
@@ -226,13 +228,14 @@ BOT_VERSION = 'WbConviergeBot v.0.1'
 def main(chatID, token):
     user = get_user(tg_id=chatID)
     if token == user.export_token:
-        employee_ids = [e.id for e in get_employee(user_id=user.id)]
+        employee_ids = [e for e in get_employee(user_id=user.id)]
         export = []
-        for employee_id in employee_ids:
-            exp = get_exportmain(employee_id) 
-            for ex in exp:
-                export.append([ex.nmId_size, ex.nmId, ex.size,  ex.seller_name, ex.product_name, ex.quantity, ex.quantity_till, ex.orders_90, ex.orders_30, ex.orders_14, ex.stock_reserve, ex.forsupply_14, ex.forsupply_N, ex.sales_90, ex.buyout, ex.rating, ex.updatet_at, ex.abc_percent, ex.abc])   
-        
+        for employee in employee_ids:
+            if get_seller(id=employee.seller.id).export:
+                exp = get_exportmain(employee.id) 
+                for ex in exp:
+                    export.append([ex.nmId_size, ex.nmId, ex.size,  ex.seller_name, ex.product_name, ex.quantity, ex.quantity_till, ex.orders_90, ex.orders_30, ex.orders_14, ex.stock_reserve, ex.forsupply_14, ex.forsupply_N, ex.sales_90, ex.buyout, ex.rating, ex.updatet_at, ex.abc_percent, ex.abc])   
+            
         
         df = pd.DataFrame(export, columns=['загружено', BOT_VERSION, '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
         stream = io.StringIO()
@@ -246,10 +249,10 @@ def main(chatID, token):
 def subject(chatID, token):
     user = get_user(tg_id=chatID)
     if token == user.export_token:
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
+        sellers_ids = [s for s in get_seller(user_id=user.id) if s.is_active and s.export]
         products = []
-        for seller_id in sellers_ids:
-            prod = get_product(seller_id=seller_id)
+        for seller in sellers_ids:
+            prod = get_product(seller_id=seller.id)
             for p in prod:
                 size = p.techSize if p.techSize != '0' else ''
                 products.append([f"{p.nmId}_{size}", p.nmId, p.techSize, p.category, p.subject, p.supplierArticle, p.brand])
@@ -274,7 +277,7 @@ def orders(chatID, token, search=None, date1=None, date2=None, group : bool = No
             period = f"{date1.replace('-', '.')} - {datetime.now().strftime('%d.%m.%Y')}" if not date2 else f"{date1.replace('-', '.')} - {date2.replace('-', '.')}"
         else:
             period = f"{(datetime.now() - timedelta(days=10)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
+        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active and s.export]
         orders = []
         for seller_id in sellers_ids:
             seller_orders = get_order(seller_id=seller_id, select_for='reports', period=period, search=search)
@@ -326,7 +329,7 @@ def sales(chatID, token, search=None, date1=None, date2=None, group : bool = Non
             period = f"{date1.replace('-', '.')} - {datetime.now().strftime('%d.%m.%Y')}" if not date2 else f"{date1.replace('-', '.')} - {date2.replace('-', '.')}"
         else:
             period = f"{(datetime.now() - timedelta(days=10)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
+        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active and s.export]
         orders = []
         for seller_id in sellers_ids:
             seller_sales = get_sale(seller_id=seller_id, select_for='reports', period=period, search=search, type='S')
@@ -368,7 +371,7 @@ def return_(chatID, token, search=None, date1=None, date2=None, group : bool = N
             period = f"{date1.replace('-', '.')} - {datetime.now().strftime('%d.%m.%Y')}" if not date2 else f"{date1.replace('-', '.')} - {date2.replace('-', '.')}"
         else:
             period = f"{(datetime.now() - timedelta(days=10)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
+        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active and s.export]
         orders = []
         for seller_id in sellers_ids:
             seller_sales = get_sale(seller_id=seller_id, select_for='reports', period=period, search=search, type='R')
@@ -410,7 +413,7 @@ def penalties(chatID, token, search=None, date1=None, date2=None, group : bool =
             period = f"{date1.replace('-', '.')} - {datetime.now().strftime('%d.%m.%Y')}" if not date2 else f"{date1.replace('-', '.')} - {date2.replace('-', '.')}"
         else:
             period = f"{(datetime.now() - timedelta(days=10)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}"
-        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active]
+        sellers_ids = [s.id for s in get_seller(user_id=user.id) if s.is_active and s.export]
         orders = []
         for seller_id in sellers_ids:
             seller_sales = get_sale(seller_id=seller_id, select_for='reports', period=period, search=search, type='D')
@@ -445,5 +448,40 @@ def penalties(chatID, token, search=None, date1=None, date2=None, group : bool =
         return response
 
 @api.get('/export/reportDetail')
-def reportDetail(data):
-    pass
+def reportDetail(chatID, token, search=None, date1=None, date2=None, group : bool = None):
+    user = get_user(tg_id=chatID)
+    if token == user.export_token:
+        
+        dateFrom = date1.split('.')
+        dateTo = date2 if date2 else datetime.now().strftime('%Y-%m-%d')
+        sellers_ids = [s for s in get_seller(user_id=user.id) if s.is_active and s.export]
+        export = []
+        for seller in sellers_ids:
+            params = {'dateFrom': f'{dateFrom[2]}-{dateFrom[1]}-{dateFrom[0]}',
+                      'dateTo': dateTo}
+            headers = {'Authorization': seller.token}
+            response = requests.get('https://statistics-api.wildberries.ru/api/v1/supplier/reportDetailByPeriod', headers=headers, params=params)
+            res = response.json()
+            for row in res:
+                size = ''
+                date = row['rr_dt'].replace('T00:00:00Z', '')
+                category = 0
+                region = ''
+                try:
+                    ppvz_kvw_prc_base = row['ppvz_kvw_prc_base']
+                except:
+                    ppvz_kvw_prc_base = ''
+                try:
+                    ppvz_reward = row['ppvz_reward']
+                except:
+                    ppvz_reward = ''
+                export.append([f"{row['nm_id']}_{size}", date, row['srid'], date, category, row['subject_name'], row['nm_id'], size, row['sa_name'], row['delivery_amount'], row['retail_price'], row['sale_percent'], row['retail_amount'], ppvz_kvw_prc_base, row['ppvz_for_pay'], row['delivery_rub'], ppvz_reward, row['penalty'], row['ppvz_vw'], '', row['office_name'], region, row['brand_name']])
+
+        df = pd.DataFrame(export, columns=['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
+        print(df)
+        stream = io.StringIO()
+        df.to_csv(stream, index = False)
+        response = StreamingResponse(iter([stream.getvalue()]),
+                                    media_type="text/csv"
+                                    )
+        return response
