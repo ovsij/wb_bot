@@ -561,7 +561,7 @@ def inline_kb_debit(db_request, tg_id : str):
     else:
         for t in transactions:
             if not t.type:
-                text += f'Номер:              {t.id}\nДата:                  {t.datetime.strftime("%d.%m.%Y %H:%M")}\nПоставщик:      {t.seller_name}\nТариф:               {t.tariff}\nБаланс:             {t.balance}\nЗачислено:       {t.sum}₽\n\n'
+                text += f'Номер:              {t.id}\nДата:                  {t.datetime.strftime("%d.%m.%Y %H:%M")}\nПоставщик:      {t.seller_name}\nТариф:               {t.tariff}\nБаланс:             {t.balance}\nСписано:       {t.sum}₽\n\n'
     text_and_data = [
         btn_back('balanсe')
     ]
