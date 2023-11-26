@@ -13,44 +13,45 @@ from bot.database.functions.db_requests import DbRequests
 logging.basicConfig(level=logging.INFO)
 
 async def main(start_num):
-    logging.info('start')
-    db_request = DbRequests()
-    # удалить вчерашние запросы
-    #db_request.delete_keywords(is_today=False)
-    #logging.info('удалить вчерашние запросы - DONE')
-    # сделать сегодняшние вчерашними
-    #db_request.update_keyword(is_today=True)
-    #logging.info('сделать сегодняшние вчерашними - DONE')
-    # создать сегодняшние
-    #db_request.create_keywords()
-    #logging.info('создать сегодняшние - DONE')
+    while True:
+        logging.info('start')
+        db_request = DbRequests()
+        # удалить вчерашние запросы
+        #db_request.delete_keywords(is_today=False)
+        #logging.info('удалить вчерашние запросы - DONE')
+        # сделать сегодняшние вчерашними
+        #db_request.update_keyword(is_today=True)
+        #logging.info('сделать сегодняшние вчерашними - DONE')
+        # создать сегодняшние
+        #db_request.create_keywords()
+        #logging.info('создать сегодняшние - DONE')
 
-    #keywords = db_request.get_keywords(is_today=True)
-    keywords_df = pd.read_csv('bot/database/requests.csv', names=['keyword', 'requests'])
-    logging.info('keywords extracted from file')
-    
-    start = datetime.now()
-    session = aiohttp.ClientSession(trust_env=True)
-    for num in range(start_num, 101):
-        try:
-            logging.info(f'i: {num}')
-            time = datetime.now()
-            logging.info(f'start: {(num - 1) * 10000} : {num * 10000}')
-            logging.info(f'time: {time}')
-            tasks = set()
-            for i in range((num - 1) * 10000, num * 10000):
-                keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
-                tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session, i)))
-            results = await asyncio.gather(*tasks)
-        except:
-            #if num == 50:
-            #    break
-            await main(num)
+        #keywords = db_request.get_keywords(is_today=True)
+        keywords_df = pd.read_csv('bot/database/requests.csv', names=['keyword', 'requests'])
+        logging.info('keywords extracted from file')
+        
+        start = datetime.now()
+        session = aiohttp.ClientSession(trust_env=True)
+        for num in range(start_num, 101):
+            try:
+                logging.info(f'i: {num}')
+                time = datetime.now()
+                logging.info(f'start: {(num - 1) * 10000} : {num * 10000}')
+                logging.info(f'time: {time}')
+                tasks = set()
+                for i in range((num - 1) * 10000, num * 10000):
+                    keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
+                    tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session, i)))
+                results = await asyncio.gather(*tasks)
+            except:
+                #if num == 50:
+                #    break
+                await main(num)
 
-    await session.close()
-    
-    end = datetime.now()
-    logging.info(f'Time {end-start}')
+        await session.close()
+        
+        end = datetime.now()
+        logging.info(f'Time {end-start}')
             
 
 async def get_request(db_request, keyword, start, session, i):
