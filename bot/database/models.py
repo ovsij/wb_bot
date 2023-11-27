@@ -269,3 +269,11 @@ class ExportMain(db.Entity):
     updatet_at = Optional(datetime)
     abc_percent = Optional(float)
     abc = Optional(str)
+
+class Comission(db.Entity):
+    __table_name__ = "comission"
+
+    id = PrimaryKey(int, auto=True)
+    category = Optional(str)
+    subject = Optional(str, unique=True)
+    percent = Optional(int)

@@ -21,7 +21,8 @@ async def get_wb_token(message: Message, db_request: DbRequests, state: FSMConte
     data = await state.get_data()
     report = await Statistics.get_reportDetailByPeriod(token)
     if report:
-        seller_name = await WbParser.get_seller_name(article=report[0]['nm_id']).replace('Индивидуальный предприниматель', 'ИП')
+        seller_name = await WbParser.get_seller_name(article=report[0]['nm_id'])
+        seller_name = seller_name.replace('Индивидуальный предприниматель', 'ИП')
         if data['stage'] == 'connect' or data['stage'] == 'add_seller':
             seller = db_request.create_seller(name=seller_name, user_id=db_request.get_user(tg_id=str(message.from_user.id)).id, token=token)
             if data['stage'] == 'connect':

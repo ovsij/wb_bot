@@ -41,6 +41,33 @@ LOGISTICS = {
     'Екатеринбург 2': 134,
     'Новосибирск': 134,
 }
+
+async def inline_kb_new_order_addit(db_request, order_id : int, minus_total : int):
+    order = db_request.get_order(id=order_id)
+    product = db_request.get_product(id=order.product.id)
+    today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
+    price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
+    sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    try:
+        spp = [s['spp'] for s in sales_list if s['nmId'] == order.nmId][-1]
+    except:
+        spp = 0
+    comission = db_request.get_comission(subject=order.subject)
+    try:
+        logistic_price = f": {LOGISTICS[order.warehouseName]}₽"
+    except:
+        logistic_price = ''
+    text = as_line(order.date,
+                   f'🛒 Заказ [{len(today_orders) - minus_total}]: {price}₽',
+                   f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
+                   f'💼 Комиссия базовая: {round(price * (1 - comission/100), 2)}₽ ({comission}%)',
+                   f'🌐 {order.warehouseName} → {order.oblast}{logistic_price}',
+                   '',
+                   sep='\n')
+    return text.as_html()
+    
+
+
 async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_total : int, search=None):
     seller = db_request.get_seller(id=employee.seller.id)
     order = db_request.get_order(id=order_id)
@@ -90,12 +117,14 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
     except:
         logistic_price = ''
 
+    comission = db_request.get_comission(subject=product.subject)
+    
     text = as_line(order.date,
                    seller.name,
                    '',
                    f'🛒 Заказ [{len(today_orders) - minus_total}]: {price}₽',
                    f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
-                   f'🆔 Арт: {order.nmId} 👉🏻',
+                   f'🆔 Арт: {order.nmId} ',
                    f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
                    f'📁 {product.subject}',
                    f'🏷 {product.brand} / {product.supplierArticle}',
@@ -104,7 +133,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
                    f'💵 Сегодня таких: {len(today_orders_such)} на {int(sum(today_orders_such))}₽',
                    f'💶 Вчера таких: {len(yesterday_orders_such)} на {int(sum(yesterday_orders_such))}₽',
                    f'{abc_emoji} ABC-анализ: {abc} ({abc_percent}%)',
-                   f'💼 Комиссия базовая: {round(price * (1 - 19/100), 2)}₽ (19%)',
+                   f'💼 Комиссия базовая: {round(price * (1 - comission/100), 2)}₽ ({comission}%)',
                    f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_list)})',
                    f'🌐 {order.warehouseName} → {order.oblast}{logistic_price}',
                    f'🚛 В пути до клиента: {inWayToClient}',
@@ -168,12 +197,34 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         else:
             return False
         
+async def inline_kb_new_sale_addit(db_request, sale_id : int, minus_total : int):
+    sale = db_request.get_sale(id=sale_id)
+    product = db_request.get_product(id=sale.product.id)
+    today_sales = [s for s in db_request.get_sale(seller_id=product.seller.id, select_for='reports', period='today', type=str(sale.saleID)[0])]
+    price = sale.priceWithDisc
+    spp = sale.spp
+    comission = db_request.get_comission(subject=sale.subject)
+    try:
+        logistic_price = f": {LOGISTICS[sale.warehouseName]}₽"
+    except:
+        logistic_price = ''
+    text = as_line(sale.date,
+                   f'🛒 Заказ [{len(today_sales) - minus_total}]: {price}₽',
+                   f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
+                   f'💼 Комиссия базовая: {round(price * (1 - comission/100), 2)}₽ ({comission}%)',
+                   f'🌐 {sale.warehouseName} → {sale.regionName}{logistic_price}',
+                   '',
+                   sep='\n')
+    return text.as_html()
 
-async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_total : int):
+async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_total : int, search : bool = None):
     seller = db_request.get_seller(id=employee.seller.id)
     sale = db_request.get_sale(id=sale_id)
     sales_order = db_request.get_order(odid=sale.odid)
-    date_from_order = (sale.date - sales_order.date).days
+    try:
+        date_from_order = (sale.date - sales_order.date).days
+    except:
+        date_from_order = ''
     product = db_request.get_product(id=sale.product.id)
     price = sale.priceWithDisc
     product_warehouse = db_request.get_product_warehouse(product_id=product.id)
@@ -184,9 +235,9 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
     sales = len(sales_list) - inWayFromClient
     gNumbers = [s['gNumber'] for s in sales_list]
     orders = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
-    today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
-    today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date()]
-    yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == sale.nmId]
+    today_sales = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=product.seller.id, select_for='reports', period='today', type=str(sale.saleID)[0])]
+    today_sales_such = [s['priceWithDisc'] for s in sales_list if s['date'].date() == datetime.now().date()]
+    yesterday_sales_such = [s['priceWithDisc'] for s in sales_list if s['date'].date() == (datetime.now() - timedelta(days=1)).date()]
     orders_list = [o for o in orders if o['gNumber'] in gNumbers]
     buyout = int((sales/len(orders_list)) * 100)
     abc, abc_percent = abc_analysis.get_abc(db_request, product_id=product.id, seller_id=product.seller.id)
@@ -212,23 +263,26 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
         
     except:
         logistic_price = ''
+
+    comission = db_request.get_comission(subject=product.subject)
+
     sale_type = '✅ Выкуп' if sale.saleID.startswith('S') else '⛔️ Отмена'
     text = as_line(sale.date,
                    seller.name,
                    '',
-                   f'{sale_type} [{len(today_orders) - minus_total}]: {price}₽',
+                   f'{sale_type} [{len(today_sales) - minus_total}]: {price}₽',
                    f'⏱️ От даты заказа: {date_from_order} дн.',
-                   f'📈 Сегодня: {len(today_orders)} на {int(sum(today_orders))}₽',
-                   f'🆔 Арт: {sale.nmId} 👉🏻',
+                   f'📈 Сегодня: {len(today_sales)} на {int(sum(today_sales))}₽',
+                   f'🆔 Арт: {sale.nmId} ',
                    f'🛍️ WB скидка: {int(price * (spp / 100))}₽ ({spp}%)',
                    f'📁 {product.subject}',
                    f'🏷 {product.brand} / {product.supplierArticle}',
                    f'⭐ Рейтинг: {product.rating}',
                    f'💬 Отзывы: {product.reviews}',
-                   f'💵 Сегодня таких: {len(today_orders_such)} на {int(sum(today_orders_such))}₽',
-                   f'💶 Вчера таких: {len(yesterday_orders_such)} на {int(sum(yesterday_orders_such))}₽',
+                   f'💵 Сегодня таких: {len(today_sales_such)} на {int(sum(today_sales_such))}₽',
+                   f'💶 Вчера таких: {len(yesterday_sales_such)} на {int(sum(yesterday_sales_such))}₽',
                    f'{abc_emoji} ABC-анализ: {abc} ({abc_percent}%)',
-                   f'💼 Комиссия базовая: {round(price * (1 - 19/100), 2)}₽ (19%)',
+                   f'💼 Комиссия базовая: {round(price * (1 - comission/100), 2)}₽ ({comission}%)',
                    f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_list)})',
                    f'🌐 {sale.warehouseName} → {sale.regionName}{logistic_price}',
                    f'🚛 В пути до клиента: {inWayToClient}',
@@ -245,7 +299,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
     elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
     
-    if employee.is_key_words:
+    if employee.is_key_words and search:
         #print(order.nmId)
         keywords = db_request.get_keywords(article=sale.nmId, is_today=True)
         #print(keywords)
@@ -345,7 +399,7 @@ async def update_seller(seller, tariff : bool = None):
             tariff = 1690
         db_request.update_seller(id=seller.id, tariff=tariff)
 
-    try:
+    '''try:
         
         logging.info(f'{seller.name}[{seller.id}] started stocks. Time: {datetime.now()}')
         """UPDATING STOCKS"""
@@ -375,12 +429,12 @@ async def update_seller(seller, tariff : bool = None):
                                     rating=rating,
                                     reviews=reviews)
     except Exception as ex:
-        logging.warning(f'{seller} stock ex - {ex}')
+        logging.warning(f'{seller} stock ex - {ex}')'''
     """UPDATING ORDERS"""
     try:
         logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
         orders = await Statistics.get_orders(db_request, seller)
-        new_orders = []
+        new_orders = {}
         for order in orders:
             new_order = db_request.create_order(seller_id=seller.id,
                                     gNumber=order['gNumber'],
@@ -400,34 +454,62 @@ async def update_seller(seller, tariff : bool = None):
                                     category=order['category'],
                                     brand=order['brand'],
                                     isCancel=order['isCancel'],
-                                    cancel_dt=order['cancel_dt'],
+                                    cancel_dt=order['cancelDate'],
                                     sticker=order['sticker'],
                                     srid=order['srid'],
                                     orderType=order['orderType'],)
             await asyncio.sleep(0.00001)
             if new_order != None:
-                new_orders.append(new_order)
-        total_new_orders = len(new_orders[2:4])
-        
+                try:
+                    new_orders[order['nmId']] += [new_order]
+                except:
+                    new_orders[order['nmId']] = [new_order]
+        total_new_orders = len(new_orders)
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
-                text = None
-                if len(new_orders) == 1:
-                    text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=0, search=True)
-                elif len(new_orders) > 1:
-                    text, reply_markup = await inline_kb_new_order(db_request, order_id=new_orders[0].id, employee=employee, minus_total=total_new_orders)
-                    if text:
-                        text += '\n➕ в том числе 👇🏻\n'
-                        for order in new_orders[1:3]:
-                            text += await inline_kb_add_order(db_request, order_id=order.id, minus_total=total_new_orders)
+                for _, new_order_lst in new_orders.items():
+                    if len(new_order_lst) == 1:
+                        total_new_orders -= 1
+                        text, reply_markup = await inline_kb_new_order(db_request, order_id=new_order_lst[0].id, employee=employee, minus_total=total_new_orders, search=True)
+                    elif 4 > len(new_order_lst) > 1:
+                        total_new_orders -= 1
+                        text, reply_markup = await inline_kb_new_order(db_request, order_id=new_order_lst[0].id, employee=employee, minus_total=total_new_orders)
+                        text += '\n➕ в том числе 👇🏻\n\n'
+                        for addit_order in new_order_lst[1:]:
                             total_new_orders -= 1
-                if text:
-                    user = db_request.get_user(id=employee.user.id)
-                    try:
-                        photo = FSInputFile(f'bot/database/images/{new_orders[0].nmId}.jpg', 'rb')
-                        await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                    except Exception as ex:
-                        logging.warning(ex)
+                            text += await inline_kb_new_order_addit(db_request, order_id=addit_order.id, minus_total=total_new_orders)
+                    else:
+                        if len(new_order_lst) % 3 == 0:
+                            range_num = int(len(new_order_lst) / 3)
+                        else:
+                            range_num = int(len(new_order_lst) / 3) + 1
+
+                        for i in range(range_num):
+                            total_new_orders -= 1
+                            search = None if len(new_order_lst[i*3+1 : i*3+3]) > 0 else True
+                            text, reply_markup = await inline_kb_new_order(db_request, order_id=new_order_lst[i*3].id, employee=employee, minus_total=total_new_orders, search=search)
+                            
+                            if text:
+                                if not search:
+                                    text += '\n➕ в том числе 👇🏻\n\n'
+                                    for addit_order in new_order_lst[i*3+1 : i*3+3]:
+                                        total_new_orders -= 1
+                                        text += await inline_kb_new_order_addit(db_request, order_id=addit_order.id, minus_total=total_new_orders)
+                                user = db_request.get_user(id=employee.user.id)
+                                try:
+                                    photo = FSInputFile(f'bot/database/images/{addit_order.nmId}.jpg', 'rb')
+                                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                                except Exception as ex:
+                                    logging.warning(ex)
+                        return
+                    if text:
+                        user = db_request.get_user(id=employee.user.id)
+                        try:
+                            photo = FSInputFile(f'bot/database/images/{new_order_lst[0].nmId}.jpg', 'rb')
+                            await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                        except Exception as ex:
+                            logging.warning(ex)
+                    
             
     except Exception as ex:
         logging.warning(f'{seller} orders ex - {ex}')
@@ -435,7 +517,7 @@ async def update_seller(seller, tariff : bool = None):
     try:
         logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
         sales = await Statistics.get_sales(db_request, seller)
-        new_sales = []
+        new_sales = {}
         for sale in sales:
             new_sale = db_request.create_sale(seller_id=seller.id,
                                 gNumber=sale['gNumber'],
@@ -467,10 +549,14 @@ async def update_seller(seller, tariff : bool = None):
                                 srid=sale['srid'], )
             await asyncio.sleep(0.00001)
             if new_sale != None:
-                new_sales.append(new_sale)
+                try:
+                    new_sales[sale['nmId']] += [new_sale]
+                except:
+                    new_sales[sale['nmId']] = [new_sale]
         total_new_sales = len(new_sales)
-        for sale in new_sales:
-            for employee in db_request.get_employee(seller_id=seller.id):
+        for employee in db_request.get_employee(seller_id=seller.id):
+            if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
+                """
                 text, reply_markup = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
                 total_new_sales -= 1
                 user = db_request.get_user(id=employee.user.id)
@@ -478,7 +564,49 @@ async def update_seller(seller, tariff : bool = None):
                     photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
                     await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
                 except Exception as ex:
-                    logging.warning(ex)
+                    logging.warning(ex)"""
+                for _, new_sale_lst in new_sales.items():
+                    if len(new_sale_lst) == 1:
+                        total_new_sales -= 1
+                        text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales, search=True)
+                    elif 4 > len(new_sale_lst) > 1:
+                        total_new_sales -= 1
+                        text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales)
+                        text += '\n➕ в том числе 👇🏻\n\n'
+                        for addit_sale in new_sale_lst[1:]:
+                            total_new_sales -= 1
+                            text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
+                    else:
+                        if len(new_sale_lst) % 3 == 0:
+                            range_num = int(len(new_sale_lst) / 3)
+                        else:
+                            range_num = int(len(new_sale_lst) / 3) + 1
+
+                        for i in range(range_num):
+                            total_new_sales -= 1
+                            search = None if len(new_sale_lst[i*3+1 : i*3+3]) > 0 else True
+                            text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[i*3].id, employee=employee, minus_total=total_new_sales, search=search)
+                            
+                            if text:
+                                if not search:
+                                    text += '\n➕ в том числе 👇🏻\n\n'
+                                    for addit_sale in new_sale_lst[i*3+1 : i*3+3]:
+                                        total_new_sales -= 1
+                                        text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
+                                user = db_request.get_user(id=employee.user.id)
+                                try:
+                                    photo = FSInputFile(f'bot/database/images/{addit_sale.nmId}.jpg', 'rb')
+                                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                                except Exception as ex:
+                                    logging.warning(ex)
+                        return
+                    if text:
+                        user = db_request.get_user(id=employee.user.id)
+                        try:
+                            photo = FSInputFile(f'bot/database/images/{new_sale_lst[0].nmId}.jpg', 'rb')
+                            await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                        except Exception as ex:
+                            logging.warning(ex)
     except Exception as ex:
         logging.warning(f'{seller} sales ex - {ex}')
 

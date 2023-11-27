@@ -442,7 +442,7 @@ class DbRequests:
                      warehouseName : str, 
                      oblast : str, 
                      incomeID : int, 
-                     odid : int, 
+                     #odid : int, 
                      nmId : int, 
                      subject : str, 
                      category : str, 
@@ -452,7 +452,7 @@ class DbRequests:
                      sticker : str, 
                      srid : str, 
                      orderType : str, ):
-        if not Order.exists(odid=odid):
+        if not Order.exists(srid=srid):
             product = Product.get(barcode=barcode, seller=Seller[seller_id])
             if not product:
                 #print(f'product {barcode} не найден')
@@ -470,7 +470,7 @@ class DbRequests:
                           warehouseName=warehouseName,
                           oblast=oblast,
                           incomeID=incomeID,
-                          odid=odid,
+                          #odid=odid,
                           nmId=nmId,
                           subject=subject,
                           category=category,
@@ -558,7 +558,7 @@ class DbRequests:
                      regionName : str, 
                      incomeID : int, 
                      saleID : str, 
-                     odid : int, 
+                     #odid : int, 
                      spp : float, 
                      forPay : float, 
                      finishedPrice : float, 
@@ -569,7 +569,7 @@ class DbRequests:
                      brand : str, 
                      sticker : str, 
                      srid : str, ):
-        if not Sale.exists(odid=odid):
+        if not Sale.exists(saleID=saleID):
             product = Product.get(barcode=barcode, seller=Seller[seller_id])
             if not product:
                 return
@@ -596,7 +596,7 @@ class DbRequests:
                         regionName=regionName, 
                         incomeID=incomeID, 
                         saleID=saleID, 
-                        odid=odid, 
+                        #odid=odid, 
                         spp=spp, 
                         forPay=forPay, 
                         finishedPrice=finishedPrice, 
@@ -656,8 +656,8 @@ class DbRequests:
             if re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                 datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                 dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
-                query = select((s.id, s.priceWithDisc, s.gNumber, s.nmId, s.spp) for s in Sale if s.product.id == product_id and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type) and s.order)[:]
-                return [{'priceWithDisc': q[1], 'gNumber': q[2], 'nmId': q[3], 'spp': q[4]} for q in query]
+                query = select((s.id, s.priceWithDisc, s.gNumber, s.nmId, s.spp, s.date) for s in Sale if s.product.id == product_id and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type) and s.order)[:]
+                return [{'priceWithDisc': q[1], 'gNumber': q[2], 'nmId': q[3], 'spp': q[4], 'date': q[5]} for q in query]
         elif tg_id:
             user = User.get(tg_id=tg_id)
             sellers = select(us.seller for us in user.sellers if us.is_selected)[:]
@@ -793,3 +793,25 @@ class DbRequests:
             exportmain_to_update.updatet_at=updatet_at
             exportmain_to_update.abc_percent=abc_percent
             exportmain_to_update.abc=abc
+    
+    
+    
+    """Commission requests"""
+    @db_session()
+    async def create_comission(self, category, subject, percent):
+        if Comission.exists(subject=subject):
+            comission = Comission.get(subject=subject)
+            comission.percent = percent
+        else:
+            comission = Comission(category=category, subject=subject, percent=percent)
+        return comission
+    
+    @db_session()
+    def get_comission(self, subject):
+        if Comission.exists(subject=subject):
+            comission = Comission.get(subject=subject)
+            return comission.percent
+        else:
+            return 19
+
+    
