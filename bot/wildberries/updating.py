@@ -399,7 +399,7 @@ async def update_seller(seller, tariff : bool = None):
             tariff = 1690
         db_request.update_seller(id=seller.id, tariff=tariff)
 
-    '''try:
+    try:
         
         logging.info(f'{seller.name}[{seller.id}] started stocks. Time: {datetime.now()}')
         """UPDATING STOCKS"""
@@ -429,7 +429,7 @@ async def update_seller(seller, tariff : bool = None):
                                     rating=rating,
                                     reviews=reviews)
     except Exception as ex:
-        logging.warning(f'{seller} stock ex - {ex}')'''
+        logging.warning(f'{seller} stock ex - {ex}')
     """UPDATING ORDERS"""
     try:
         logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
