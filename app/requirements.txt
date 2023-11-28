@@ -3,4 +3,5 @@ pandas
 pony==0.7.17
 python-dotenv==0.21.0
 psycopg2-binary==2.9.9
+requests==2.28.2
 uvicorn
