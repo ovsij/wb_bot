@@ -45,7 +45,7 @@ class Statistics:
                     result = await response.json()
                     return result
                 elif response.status == 401:
-                    print(f'Sales {seller} Unauthorized response')
+                    print(f'Orders {seller} Unauthorized response')
                 else:
                     print('orders list is empty')
                     print(seller.token)
