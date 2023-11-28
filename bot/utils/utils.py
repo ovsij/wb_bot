@@ -1,8 +1,8 @@
 import logging
 
 def get_difference(article : str, today, yesterday):
-    if all(article not in today.search_1, article not in today.search_2, article not in today.search_3) \
-          or all(article not in yesterday.search_1, article not in yesterday.search_2, article not in yesterday.search_3):
+    if all([article not in today.search_1, article not in today.search_2, article not in today.search_3]) \
+          or all([article not in yesterday.search_1, article not in yesterday.search_2, article not in yesterday.search_3]):
         return ''
     today_page = 1 if article in today.search_1 else 2 if article in today.search_2 else 3
     today_index = today.search_1.index(article) + 1 if today_page == 1 else today.search_2.index(article) + 1 if today_page == 2 else today.search_3.index(article) + 1
