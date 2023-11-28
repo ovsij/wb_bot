@@ -46,8 +46,8 @@ async def payment(db_request, seller):
                                                 seller_name=seller.name, 
                                                 )
                     db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
-                    logging.info(f'User {employee} paid {paymet_sum}')
-                    continue
+                    logging.info(f'User {employee} paid for {seller.name}[{seller.id}] {paymet_sum}')
+                    break
         try:
             seller = db_request.get_seller(id=seller.id)
             if (datetime.now() - seller.last_payment_date) > timedelta(hours=23.5):

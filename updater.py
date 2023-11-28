@@ -10,10 +10,10 @@ logging.basicConfig(level=logging.INFO)
 async def main():
     
     task1 = asyncio.create_task(update_sellers())
-    task2 = asyncio.create_task(regular_payment())
-    task3 = asyncio.create_task(regular_check_test_period())
+    #task2 = asyncio.create_task(regular_payment())
+    #task3 = asyncio.create_task(regular_check_test_period())
     task4 = asyncio.create_task(update_mainexport())
-    await asyncio.gather(task1, task2, task3, task4)
+    await asyncio.gather(task1, task4)
 
 
 if __name__ == '__main__':
