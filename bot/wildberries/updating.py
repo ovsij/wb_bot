@@ -582,10 +582,11 @@ async def update_seller(seller, tariff : bool = None):
                     elif 4 > len(new_sale_lst) > 1:
                         total_new_sales -= 1
                         text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales)
-                        text += '\n➕ в том числе 👇🏻\n\n'
-                        for addit_sale in new_sale_lst[1:]:
-                            total_new_sales -= 1
-                            text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
+                        if text:
+                            text += '\n➕ в том числе 👇🏻\n\n'
+                            for addit_sale in new_sale_lst[1:]:
+                                total_new_sales -= 1
+                                text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
                     else:
                         if len(new_sale_lst) % 3 == 0:
                             range_num = int(len(new_sale_lst) / 3)
