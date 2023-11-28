@@ -15,31 +15,36 @@ from bot.utils.utils import get_difference
 
 
 LOGISTICS = {
-    'Астана': 8,
-    'Атакент': 8,
-    'Санкт-Петербург': 26,
-    'Невинномысск': 30,
-    'Краснодар': 32,
+    'Астана': 7,
+    'Атакент': 7,
+    'Санкт-Петербург': 24.5,
+    'Санкт-Петербург Шушары': 24.5,
+    'Невинномысск': 24.5,
+    'Краснодар': 33.25,
+    'СЦ Кузнецк': 32,
     'Краснодар 2': 32,
-    'Тула': 38,
-    'Пушкино': 40,
-    'Радумля 1': 40,
-    'Радумля КБТ': 40,
-    'Казань': 44,
+    'Тула': 36.75,
+    'Пушкино': 36.75,
+    'Радумля 1': 36.75,
+    'Радумля СГТ': 36.75,
+    'Казань': 52.5,
     'Санкт-Петербург 2': 44,
-    'Вёшки': 45.6,
-    'Белая дача': 48,
+    'Санкт-Петербург Уткина Заводь': 42,
+    'Вёшки': 42,
+    'Белая дача': 45.5,
     'МЛП-Подольск': 48,
     'Электросталь': 56,
-    'Белые Столбы': 60,
-    'Коледино': 60,
-    'Подольск': 60,
-    'Хабаровск': 60,
-    'Чехов 2': 60,
-    'Маркетплейс': 64,
-    'Екатеринбург': 134,
+    'Белые Столбы': 56,
+    'Коледино': 54.25,
+    'Подольск': 56,
+    'Хабаровск': 56,
+    'Чехов 2': 50.75,
+    'Маркетплейс': 52.5,
+    'Екатеринбург': 105,
+    'Екатеринбург - Перспективный 12': 105,
     'Екатеринбург 2': 134,
-    'Новосибирск': 134,
+    'Екатеринбург - Испытателей 14г': 122.5,
+    'Новосибирск': 119,
 }
 
 async def inline_kb_new_order_addit(db_request, order_id : int, minus_total : int):
@@ -178,7 +183,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
                             as_line(TextLink(f"{df_sort.iloc[i]['page']}-{df_sort.iloc[i]['index']}", url=f"https://www.wildberries.ru/catalog/0/search.aspx?sort=popular&search={df_sort.iloc[i]['keyword'].replace(' ', '+')}"), difference),
                             sep='\n')
             
-    url = f'https://wbconcierge-1-l1790708.deta.app/search/{order.nmId}'
+    url = f'https://wbconcierge.onrender.com/search/{order.nmId}'
     text_and_data = [
         ['Позиции в поиске 🔍', url]
     ]
@@ -514,101 +519,101 @@ async def update_seller(seller, tariff : bool = None):
     except Exception as ex:
         logging.warning(f'{seller} orders ex - {ex}')
     """UPDATING SALES"""
-    try:
-        logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
-        sales = await Statistics.get_sales(db_request, seller)
-        new_sales = {}
-        for sale in sales:
-            new_sale = db_request.create_sale(seller_id=seller.id,
-                                gNumber=sale['gNumber'],
-                                date=sale['date'],
-                                lastChangeDate=sale['lastChangeDate'],
-                                supplierArticle=sale['supplierArticle'],
-                                techSize=sale['techSize'],
-                                barcode=sale['barcode'],
-                                totalPrice=sale['totalPrice'],
-                                discountPercent=sale['discountPercent'], 
-                                isSupply=sale['isSupply'],
-                                isRealization=sale['isRealization'],
-                                warehouseName=sale['warehouseName'], 
-                                countryName=sale['countryName'], 
-                                oblastOkrugName=sale['oblastOkrugName'], 
-                                regionName=sale['regionName'], 
-                                incomeID=sale['incomeID'], 
-                                saleID=sale['saleID'], 
-                                #odid=sale['odid'], 
-                                spp=sale['spp'], 
-                                forPay=sale['forPay'], 
-                                finishedPrice=sale['finishedPrice'], 
-                                priceWithDisc=sale['priceWithDisc'], 
-                                nmId=sale['nmId'], 
-                                subject=sale['subject'], 
-                                category=sale['category'], 
-                                brand=sale['brand'], 
-                                sticker=sale['sticker'], 
-                                srid=sale['srid'], )
-            await asyncio.sleep(0.00001)
-            if new_sale != None:
-                try:
-                    new_sales[sale['nmId']] += [new_sale]
-                except:
-                    new_sales[sale['nmId']] = [new_sale]
-        total_new_sales = len(new_sales)
-        for employee in db_request.get_employee(seller_id=seller.id):
-            if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
-                """
-                text, reply_markup = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
-                total_new_sales -= 1
-                user = db_request.get_user(id=employee.user.id)
-                try:
-                    photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
-                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                except Exception as ex:
-                    logging.warning(ex)"""
-                for _, new_sale_lst in new_sales.items():
-                    if len(new_sale_lst) == 1:
+    #try:
+    logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
+    sales = await Statistics.get_sales(db_request, seller)
+    new_sales = {}
+    for sale in sales:
+        new_sale = db_request.create_sale(seller_id=seller.id,
+                            gNumber=sale['gNumber'],
+                            date=sale['date'],
+                            lastChangeDate=sale['lastChangeDate'],
+                            supplierArticle=sale['supplierArticle'],
+                            techSize=sale['techSize'],
+                            barcode=sale['barcode'],
+                            totalPrice=sale['totalPrice'],
+                            discountPercent=sale['discountPercent'], 
+                            isSupply=sale['isSupply'],
+                            isRealization=sale['isRealization'],
+                            warehouseName=sale['warehouseName'], 
+                            countryName=sale['countryName'], 
+                            oblastOkrugName=sale['oblastOkrugName'], 
+                            regionName=sale['regionName'], 
+                            incomeID=sale['incomeID'], 
+                            saleID=sale['saleID'], 
+                            #odid=sale['odid'], 
+                            spp=sale['spp'], 
+                            forPay=sale['forPay'], 
+                            finishedPrice=sale['finishedPrice'], 
+                            priceWithDisc=sale['priceWithDisc'], 
+                            nmId=sale['nmId'], 
+                            subject=sale['subject'], 
+                            category=sale['category'], 
+                            brand=sale['brand'], 
+                            sticker=sale['sticker'], 
+                            srid=sale['srid'], )
+        await asyncio.sleep(0.00001)
+        if new_sale != None:
+            try:
+                new_sales[sale['nmId']] += [new_sale]
+            except:
+                new_sales[sale['nmId']] = [new_sale]
+    total_new_sales = len(new_sales)
+    for employee in db_request.get_employee(seller_id=seller.id):
+        if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
+            """
+            text, reply_markup = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
+            total_new_sales -= 1
+            user = db_request.get_user(id=employee.user.id)
+            try:
+                photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
+                await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+            except Exception as ex:
+                logging.warning(ex)"""
+            for _, new_sale_lst in new_sales.items():
+                if len(new_sale_lst) == 1:
+                    total_new_sales -= 1
+                    text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales, search=True)
+                elif 4 > len(new_sale_lst) > 1:
+                    total_new_sales -= 1
+                    text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales)
+                    text += '\n➕ в том числе 👇🏻\n\n'
+                    for addit_sale in new_sale_lst[1:]:
                         total_new_sales -= 1
-                        text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales, search=True)
-                    elif 4 > len(new_sale_lst) > 1:
-                        total_new_sales -= 1
-                        text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales)
-                        text += '\n➕ в том числе 👇🏻\n\n'
-                        for addit_sale in new_sale_lst[1:]:
-                            total_new_sales -= 1
-                            text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
+                        text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
+                else:
+                    if len(new_sale_lst) % 3 == 0:
+                        range_num = int(len(new_sale_lst) / 3)
                     else:
-                        if len(new_sale_lst) % 3 == 0:
-                            range_num = int(len(new_sale_lst) / 3)
-                        else:
-                            range_num = int(len(new_sale_lst) / 3) + 1
+                        range_num = int(len(new_sale_lst) / 3) + 1
 
-                        for i in range(range_num):
-                            total_new_sales -= 1
-                            search = None if len(new_sale_lst[i*3+1 : i*3+3]) > 0 else True
-                            text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[i*3].id, employee=employee, minus_total=total_new_sales, search=search)
-                            
-                            if text:
-                                if not search:
-                                    text += '\n➕ в том числе 👇🏻\n\n'
-                                    for addit_sale in new_sale_lst[i*3+1 : i*3+3]:
-                                        total_new_sales -= 1
-                                        text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
-                                user = db_request.get_user(id=employee.user.id)
-                                try:
-                                    photo = FSInputFile(f'bot/database/images/{addit_sale.nmId}.jpg', 'rb')
-                                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                                except Exception as ex:
-                                    logging.warning(ex)
-                        return
-                    if text:
-                        user = db_request.get_user(id=employee.user.id)
-                        try:
-                            photo = FSInputFile(f'bot/database/images/{new_sale_lst[0].nmId}.jpg', 'rb')
-                            await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                        except Exception as ex:
-                            logging.warning(ex)
-    except Exception as ex:
-        logging.warning(f'{seller} sales ex - {ex}')
+                    for i in range(range_num):
+                        total_new_sales -= 1
+                        search = None if len(new_sale_lst[i*3+1 : i*3+3]) > 0 else True
+                        text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[i*3].id, employee=employee, minus_total=total_new_sales, search=search)
+                        
+                        if text:
+                            if not search:
+                                text += '\n➕ в том числе 👇🏻\n\n'
+                                for addit_sale in new_sale_lst[i*3+1 : i*3+3]:
+                                    total_new_sales -= 1
+                                    text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
+                            user = db_request.get_user(id=employee.user.id)
+                            try:
+                                photo = FSInputFile(f'bot/database/images/{addit_sale.nmId}.jpg', 'rb')
+                                await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                            except Exception as ex:
+                                logging.warning(ex)
+                    return
+                if text:
+                    user = db_request.get_user(id=employee.user.id)
+                    try:
+                        photo = FSInputFile(f'bot/database/images/{new_sale_lst[0].nmId}.jpg', 'rb')
+                        await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                    except Exception as ex:
+                        logging.warning(ex)
+    #except Exception as ex:
+    #    logging.warning(f'{seller} sales ex - {ex}')
 
 
     end = datetime.now()
