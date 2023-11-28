@@ -523,8 +523,8 @@ async def update_seller(seller, tariff : bool = None):
     #try:
     logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
     sales = await Statistics.get_sales(db_request, seller)
-    new_sales = {}
     if sales:
+        new_sales = {}
         for sale in sales:
             new_sale = db_request.create_sale(seller_id=seller.id,
                                 gNumber=sale['gNumber'],
@@ -560,6 +560,7 @@ async def update_seller(seller, tariff : bool = None):
                     new_sales[sale['nmId']] += [new_sale]
                 except:
                     new_sales[sale['nmId']] = [new_sale]
+        print(new_sales)
         total_new_sales = len(new_sales)
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
