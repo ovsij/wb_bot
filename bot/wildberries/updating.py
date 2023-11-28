@@ -200,7 +200,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
 
             return text.as_html(), reply_markup
         else:
-            return False
+            return False, False
         
 async def inline_kb_new_sale_addit(db_request, sale_id : int, minus_total : int):
     sale = db_request.get_sale(id=sale_id)
@@ -346,7 +346,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
             
             return text.as_html(), reply_markup
         else:
-            return False
+            return False, False
         
 async def inline_kb_add_order(db_request, order_id, minus_total):
     order = db_request.get_order(id=order_id)
