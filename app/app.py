@@ -9,7 +9,7 @@ from string import Template
 
 import requests
 
-from database import *
+from .database import *
 
 api = FastAPI()
 
