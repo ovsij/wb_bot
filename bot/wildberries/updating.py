@@ -474,6 +474,7 @@ async def update_seller(seller, tariff : bool = None):
             for employee in db_request.get_employee(seller_id=seller.id):
                 if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
                     for _, new_order_lst in new_orders.items():
+                        text = None
                         if len(new_order_lst) == 1:
                             total_new_orders -= 1
                             text, reply_markup = await inline_kb_new_order(db_request, order_id=new_order_lst[0].id, employee=employee, minus_total=total_new_orders, search=True)
@@ -574,6 +575,7 @@ async def update_seller(seller, tariff : bool = None):
                 except Exception as ex:
                     logging.warning(ex)"""
                 for _, new_sale_lst in new_sales.items():
+                    text = None
                     if len(new_sale_lst) == 1:
                         total_new_sales -= 1
                         text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales, search=True)
