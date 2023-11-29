@@ -384,7 +384,7 @@ async def update_sellers():
                     task = asyncio.create_task(update_seller(seller, tariff=True))
                     tasks.add(task)
 
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
         logging.info(f'tasks update_sellers created: {datetime.now()}')
         await asyncio.sleep(900)
 
@@ -442,9 +442,9 @@ async def update_seller(seller, tariff : bool = None):
     try:
         
         orders = await Statistics.get_orders(db_request, seller)
-        logging.info(f'{seller.name}[{seller.id}] got {len(orders)} orders. Time: {datetime.now()}')
         new_orders = {}
         if orders:
+            logging.info(f'{seller.name}[{seller.id}] got {len(orders)} orders. Time: {datetime.now()}')
             for order in orders:
                 new_order = db_request.create_order(seller_id=seller.id,
                                         gNumber=order['gNumber'],
@@ -527,8 +527,8 @@ async def update_seller(seller, tariff : bool = None):
     #try:
     
     sales = await Statistics.get_sales(db_request, seller)
-    logging.info(f'{seller.name}[{seller.id}] got {len(sales)} sales. Time: {datetime.now()}')
     if sales:
+        logging.info(f'{seller.name}[{seller.id}] got {len(sales)} sales. Time: {datetime.now()}')
         new_sales = {}
         for sale in sales:
             new_sale = db_request.create_sale(seller_id=seller.id,
