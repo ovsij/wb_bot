@@ -524,105 +524,105 @@ async def update_seller(seller, tariff : bool = None):
     except Exception as ex:
         logging.warning(f'{seller} orders ex - {ex}')
     """UPDATING SALES"""
-    try:
-        logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
-        sales = await Statistics.get_sales(db_request, seller)
-        if sales:
-            new_sales = {}
-            for sale in sales:
-                new_sale = db_request.create_sale(seller_id=seller.id,
-                                    gNumber=sale['gNumber'],
-                                    date=sale['date'],
-                                    lastChangeDate=sale['lastChangeDate'],
-                                    supplierArticle=sale['supplierArticle'],
-                                    techSize=sale['techSize'],
-                                    barcode=sale['barcode'],
-                                    totalPrice=sale['totalPrice'],
-                                    discountPercent=sale['discountPercent'], 
-                                    isSupply=sale['isSupply'],
-                                    isRealization=sale['isRealization'],
-                                    warehouseName=sale['warehouseName'], 
-                                    countryName=sale['countryName'], 
-                                    oblastOkrugName=sale['oblastOkrugName'], 
-                                    regionName=sale['regionName'], 
-                                    incomeID=sale['incomeID'], 
-                                    saleID=sale['saleID'], 
-                                    #odid=sale['odid'], 
-                                    spp=sale['spp'], 
-                                    forPay=sale['forPay'], 
-                                    finishedPrice=sale['finishedPrice'], 
-                                    priceWithDisc=sale['priceWithDisc'], 
-                                    nmId=sale['nmId'], 
-                                    subject=sale['subject'], 
-                                    category=sale['category'], 
-                                    brand=sale['brand'], 
-                                    sticker=sale['sticker'], 
-                                    srid=sale['srid'], )
-                await asyncio.sleep(0.00001)
-                if new_sale != None:
-                    try:
-                        new_sales[sale['nmId']] += [new_sale]
-                    except:
-                        new_sales[sale['nmId']] = [new_sale]
-            print(new_sales)
-            total_new_sales = len(new_sales)
-            for employee in db_request.get_employee(seller_id=seller.id):
-                if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
-                    """
-                    text, reply_markup = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
-                    total_new_sales -= 1
-                    user = db_request.get_user(id=employee.user.id)
-                    try:
-                        photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
-                        await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                    except Exception as ex:
-                        logging.warning(ex)"""
-                    for _, new_sale_lst in new_sales.items():
-                        text = None
-                        if len(new_sale_lst) == 1:
-                            total_new_sales -= 1
-                            text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales, search=True)
-                        elif 4 > len(new_sale_lst) > 1:
-                            total_new_sales -= 1
-                            text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales)
-                            if text:
-                                text += '\n➕ в том числе 👇🏻\n\n'
-                                for addit_sale in new_sale_lst[1:]:
-                                    total_new_sales -= 1
-                                    text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
-                        else:
-                            if len(new_sale_lst) % 3 == 0:
-                                range_num = int(len(new_sale_lst) / 3)
-                            else:
-                                range_num = int(len(new_sale_lst) / 3) + 1
-
-                            for i in range(range_num):
-                                total_new_sales -= 1
-                                search = None if len(new_sale_lst[i*3+1 : i*3+3]) > 0 else True
-                                text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[i*3].id, employee=employee, minus_total=total_new_sales, search=search)
-                                
-                                if text:
-                                    if not search:
-                                        text += '\n➕ в том числе 👇🏻\n\n'
-                                        for addit_sale in new_sale_lst[i*3+1 : i*3+3]:
-                                            total_new_sales -= 1
-                                            text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
-                                    user = db_request.get_user(id=employee.user.id)
-                                    try:
-                                        photo = FSInputFile(f'bot/database/images/{addit_sale.nmId}.jpg', 'rb')
-                                        await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                                    except Exception as ex:
-                                        logging.warning(ex)
-                            return
+    #try:
+    logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
+    sales = await Statistics.get_sales(db_request, seller)
+    if sales:
+        new_sales = {}
+        for sale in sales:
+            new_sale = db_request.create_sale(seller_id=seller.id,
+                                gNumber=sale['gNumber'],
+                                date=sale['date'],
+                                lastChangeDate=sale['lastChangeDate'],
+                                supplierArticle=sale['supplierArticle'],
+                                techSize=sale['techSize'],
+                                barcode=sale['barcode'],
+                                totalPrice=sale['totalPrice'],
+                                discountPercent=sale['discountPercent'], 
+                                isSupply=sale['isSupply'],
+                                isRealization=sale['isRealization'],
+                                warehouseName=sale['warehouseName'], 
+                                countryName=sale['countryName'], 
+                                oblastOkrugName=sale['oblastOkrugName'], 
+                                regionName=sale['regionName'], 
+                                incomeID=sale['incomeID'], 
+                                saleID=sale['saleID'], 
+                                #odid=sale['odid'], 
+                                spp=sale['spp'], 
+                                forPay=sale['forPay'], 
+                                finishedPrice=sale['finishedPrice'], 
+                                priceWithDisc=sale['priceWithDisc'], 
+                                nmId=sale['nmId'], 
+                                subject=sale['subject'], 
+                                category=sale['category'], 
+                                brand=sale['brand'], 
+                                sticker=sale['sticker'], 
+                                srid=sale['srid'], )
+            await asyncio.sleep(0.00001)
+            if new_sale != None:
+                try:
+                    new_sales[sale['nmId']] += [new_sale]
+                except:
+                    new_sales[sale['nmId']] = [new_sale]
+        print(new_sales)
+        total_new_sales = len(new_sales)
+        for employee in db_request.get_employee(seller_id=seller.id):
+            if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
+                """
+                text, reply_markup = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
+                total_new_sales -= 1
+                user = db_request.get_user(id=employee.user.id)
+                try:
+                    photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
+                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                except Exception as ex:
+                    logging.warning(ex)"""
+                for _, new_sale_lst in new_sales.items():
+                    text = None
+                    if len(new_sale_lst) == 1:
+                        total_new_sales -= 1
+                        text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales, search=True)
+                    elif 4 > len(new_sale_lst) > 1:
+                        total_new_sales -= 1
+                        text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[0].id, employee=employee, minus_total=total_new_sales)
                         if text:
-                            user = db_request.get_user(id=employee.user.id)
-                            try:
-                                photo = FSInputFile(f'bot/database/images/{new_sale_lst[0].nmId}.jpg', 'rb')
-                                await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                            except Exception as ex:
-                                logging.warning(ex)
-    except Exception as ex:
-        logging.warning(f'{seller} sales ex - {ex}')
+                            text += '\n➕ в том числе 👇🏻\n\n'
+                            for addit_sale in new_sale_lst[1:]:
+                                total_new_sales -= 1
+                                text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
+                    else:
+                        if len(new_sale_lst) % 3 == 0:
+                            range_num = int(len(new_sale_lst) / 3)
+                        else:
+                            range_num = int(len(new_sale_lst) / 3) + 1
+
+                        for i in range(range_num):
+                            total_new_sales -= 1
+                            search = None if len(new_sale_lst[i*3+1 : i*3+3]) > 0 else True
+                            text, reply_markup = await inline_kb_new_sale(db_request, sale_id=new_sale_lst[i*3].id, employee=employee, minus_total=total_new_sales, search=search)
+                            
+                            if text:
+                                if not search:
+                                    text += '\n➕ в том числе 👇🏻\n\n'
+                                    for addit_sale in new_sale_lst[i*3+1 : i*3+3]:
+                                        total_new_sales -= 1
+                                        text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
+                                user = db_request.get_user(id=employee.user.id)
+                                try:
+                                    photo = FSInputFile(f'bot/database/images/{addit_sale.nmId}.jpg', 'rb')
+                                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                                except Exception as ex:
+                                    logging.warning(ex)
+                        return
+                    if text:
+                        user = db_request.get_user(id=employee.user.id)
+                        try:
+                            photo = FSInputFile(f'bot/database/images/{new_sale_lst[0].nmId}.jpg', 'rb')
+                            await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                        except Exception as ex:
+                            logging.warning(ex)
+    #except Exception as ex:
+    #    logging.warning(f'{seller} sales ex - {ex}')
 
 
     end = datetime.now()
