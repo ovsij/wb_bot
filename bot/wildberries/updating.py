@@ -440,8 +440,9 @@ async def update_seller(seller, tariff : bool = None):
         logging.warning(f'{seller} stock ex - {ex}')
     """UPDATING ORDERS"""
     try:
-        logging.info(f'{seller.name}[{seller.id}] started orders. Time: {datetime.now()}')
+        
         orders = await Statistics.get_orders(db_request, seller)
+        logging.info(f'{seller.name}[{seller.id}] got {len(orders)} orders. Time: {datetime.now()}')
         new_orders = {}
         if orders:
             for order in orders:
@@ -467,7 +468,6 @@ async def update_seller(seller, tariff : bool = None):
                                         sticker=order['sticker'],
                                         srid=order['srid'],
                                         orderType=order['orderType'],)
-                await asyncio.sleep(0.00001)
                 if new_order != None:
                     try:
                         new_orders[order['nmId']] += [new_order]
@@ -525,8 +525,9 @@ async def update_seller(seller, tariff : bool = None):
         logging.warning(f'{seller} orders ex - {ex}')
     """UPDATING SALES"""
     #try:
-    logging.info(f'{seller.name}[{seller.id}] started sales. Time: {datetime.now()}')
+    
     sales = await Statistics.get_sales(db_request, seller)
+    logging.info(f'{seller.name}[{seller.id}] got {len(sales)} sales. Time: {datetime.now()}')
     if sales:
         new_sales = {}
         for sale in sales:
@@ -558,13 +559,12 @@ async def update_seller(seller, tariff : bool = None):
                                 brand=sale['brand'], 
                                 sticker=sale['sticker'], 
                                 srid=sale['srid'], )
-            await asyncio.sleep(0.00001)
             if new_sale != None:
                 try:
                     new_sales[sale['nmId']] += [new_sale]
                 except:
                     new_sales[sale['nmId']] = [new_sale]
-        print(new_sales)
+        logging.info(new_sales)
         total_new_sales = len(new_sales)
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
