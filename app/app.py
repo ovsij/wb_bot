@@ -9,20 +9,73 @@ from string import Template
 
 import requests
 
-from .database import *
+from database import *
 
 api = FastAPI()
 
+def get_difference(article : str, today, yesterday):
+    if all([article not in today.search_1, article not in today.search_2, article not in today.search_3]) \
+          or all([article not in yesterday.search_1, article not in yesterday.search_2, article not in yesterday.search_3]):
+        return ''
+    today_page = 1 if article in today.search_1 else 2 if article in today.search_2 else 3
+    today_index = today.search_1.index(article) + 1 if today_page == 1 else today.search_2.index(article) + 1 if today_page == 2 else today.search_3.index(article) + 1
+
+    yesterday_page = 1 if article in yesterday.search_1 else 2 if article in yesterday.search_2 else 3
+    yesterday_index = yesterday.search_1.index(article) + 1 if yesterday_page == 1 else yesterday.search_2.index(article) + 1 if yesterday_page == 2 else yesterday.search_3.index(article) + 1
+
+    if today_page == yesterday_page:
+        diff = yesterday_index - today_index
+    if today_page == 1 and yesterday_page == 2:
+        diff = yesterday_index + (100 - today_index)
+    if today_page == 1 and yesterday_page == 3:
+        diff = yesterday_page + 100 + (100 - today_index)
+    if today_page == 2 and yesterday_page == 1:
+        diff == -(today_index + (100 - today_index))
+    if today_page == 3 and yesterday_page == 1:
+        diff == -(today_index + 100 + (100 - today_index))
+    if today_page == 2 and yesterday_page == 3:
+        diff = -(today_index + (100 - today_index))
+    if today_page == 3 and yesterday_page == 2:
+        diff = yesterday_index + (100 - today_index)
+
+    if diff > 0:
+        return f'⬆ +{diff}'
+    elif diff < 0:
+        return f'⬇ {diff}'
+    else:
+        return ''
+
+@db_session()
+def get_keyword(keyword, is_today):
+    return KeyWord.get(keyword=keyword, is_today=is_today)
+
 def create_page(requests, article):
 
-    with open('/code/app/template.html', 'r') as file:
+    with open('./template.html', 'r') as file:
         html_content = file.read()
 
     url = f'https://www.wildberries.ru/catalog/{article}/detail.aspx'
     rows = ""
     for row in requests:
+        keyword = list(row.keys())[0]
+        page = list(row.values())[0][0]
+        position = list(row.values())[0][1]
+
+        today_keyword = get_keyword(keyword=keyword, is_today=True)
+        yesterday_keyword = get_keyword(keyword=keyword, is_today=False)
+        if yesterday_keyword:
+            try:
+                difference = get_difference(article=int(article), today=today_keyword, yesterday=yesterday_keyword)
+            except:
+                difference = ''
+        else:
+            difference = ''
+        print(f'diff {difference}')
+
+        chastota = list(row.values())[0][2]
+        concurencia = list(row.values())[0][3]
         page_url = f"https://www.wildberries.ru/catalog/0/search.aspx?page={list(row.values())[0][0]}&sort=popular&search={list(row.keys())[0].replace(' ', '+')}"
-        rows += f'<tr><td width="600">{list(row.keys())[0]}</td><td><a href="{page_url}">{list(row.values())[0][0]}-{list(row.values())[0][1]}</a></td><td>0</td><td>{list(row.values())[0][2]}</td><td>{list(row.values())[0][3]}</td></tr>'
+        rows += f'<tr><td width="600">{keyword}</td><td><a href="{page_url}">{page}-{position}</a></td><td>{difference}</td><td>{chastota}</td><td>{concurencia}</td></tr>'
     html_content = Template(html_content).substitute(url=url, article=article, rows=rows)
     return html_content
     #with open('test.html', 'w') as file:
@@ -211,6 +264,7 @@ def get_employee(user_id):
 
 @api.get('/search/{article}', response_class=HTMLResponse)
 def search(article : str):
+    print('pp')
     keywords = get_keywords(article=article, is_today=True)
     search_results = []
     for keyword in keywords:

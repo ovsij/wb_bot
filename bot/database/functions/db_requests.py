@@ -487,7 +487,7 @@ class DbRequests:
             return None
                   
     @db_session()
-    def get_order(self, id : int = None, odid : int = None, gNumber : int = None, seller_id : int = None, product_id : int = None, period : str = None, select_for : str = None, tg_id : str = None, search : str = None):
+    def get_order(self, id : int = None, odid : int = None, gNumber : int = None, seller_id : int = None, product_id : int = None, period : str = None, select_for : str = None, tg_id : str = None, search : str = None, warehouse = None, min_date : bool = None):
         if id:
             return Order[id]
         elif odid:
@@ -528,11 +528,14 @@ class DbRequests:
                 else:
                     return select(o for o in Order if o.product.seller == Seller[seller_id])[:]
         elif product_id:
-            if re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
-                datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
-                dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
-                query = select((o.id, o.totalPrice, o.discountPercent, o.gNumber, o.date, o.nmId, o.warehouseName) for o in Order if o.product.id == product_id and o.date.date() >= datefrom and o.date.date() <= dateto)[:]
-                return [{'id': q[0], 'totalPrice': q[1], 'discountPercent': q[2], 'gNumber': q[3], 'date': q[4], 'nmId': q[5], 'warehouse' : q[6]} for q in query]
+            if period:
+                if re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
+                    datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
+                    dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
+                    query = select((o.id, o.totalPrice, o.discountPercent, o.gNumber, o.date, o.nmId, o.warehouseName) for o in Order if o.product.id == product_id and o.date.date() >= datefrom and o.date.date() <= dateto)[:]
+                    return [{'id': q[0], 'totalPrice': q[1], 'discountPercent': q[2], 'gNumber': q[3], 'date': q[4], 'nmId': q[5], 'warehouse' : q[6]} for q in query]
+            elif warehouse and min_date:
+                return select(o.date for o in Order if o.warehouse == warehouse).order_by(lambda: o.date)[:1]
         elif tg_id:
             user = User.get(tg_id=tg_id)
             sellers = select(us.seller for us in user.sellers if us.is_selected)[:]
@@ -656,8 +659,8 @@ class DbRequests:
             if re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                 datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                 dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
-                query = select((s.id, s.priceWithDisc, s.gNumber, s.nmId, s.spp, s.date) for s in Sale if s.product.id == product_id and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type) and s.order)[:]
-                return [{'priceWithDisc': q[1], 'gNumber': q[2], 'nmId': q[3], 'spp': q[4], 'date': q[5]} for q in query]
+                query = select((s.id, s.priceWithDisc, s.gNumber, s.nmId, s.spp, s.date, s.order) for s in Sale if s.product.id == product_id and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type) and s.order)[:]
+                return [{'priceWithDisc': q[1], 'gNumber': q[2], 'nmId': q[3], 'spp': q[4], 'date': q[5], 'order': q[6]} for q in query]
         elif tg_id:
             user = User.get(tg_id=tg_id)
             sellers = select(us.seller for us in user.sellers if us.is_selected)[:]

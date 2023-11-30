@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import logging
 
 def get_difference(article : str, today, yesterday):
@@ -35,3 +36,35 @@ def get_difference(article : str, today, yesterday):
         return f' (⬇ {diff})'
     else:
         return ''
+    
+
+def get_warehouse_quantity(db_request, orders, product_warehouse):
+    warehouses = {}
+    quantity_till_total = 0
+    quantity_total = 0
+    wh_counter = 0
+    for pw in product_warehouse:
+        warehouse = db_request.get_warehouse(id=pw.warehouse.id)
+        
+        orders_warehouse = len([o for o in orders if o['warehouse'] == warehouse.warehouseName])
+        min_order_date = db_request.get_order(product_id=pw.product.id, warehouse=warehouse, min_date=True)
+        
+        if pw.quantity > 0:    
+            try:
+                warehouses[warehouse.warehouseName][0] += pw.quantity
+            except:
+                warehouses[warehouse.warehouseName] = [pw.quantity]
+            if orders_warehouse > 0:
+                print(datetime.now() - timedelta(days=90))
+                if datetime.now() - timedelta(days=90) > min_order_date[0]:
+                    quantity_till = int(pw.quantity / (orders_warehouse / 91))
+                else:
+                    warehouse_active_days = datetime.now() - min_order_date[0]
+                    quantity_till = int(pw.quantity / (orders_warehouse / int(warehouse_active_days.days)))
+                warehouses[warehouse.warehouseName].append(quantity_till)
+                quantity_till_total += quantity_till
+                quantity_total += pw.quantity
+                wh_counter += 1
+    quantity_till_total = int(quantity_till_total/wh_counter)
+        
+    return warehouses, quantity_till_total, quantity_total
