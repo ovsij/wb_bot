@@ -55,7 +55,6 @@ def get_warehouse_quantity(db_request, orders, product_warehouse):
             except:
                 warehouses[warehouse.warehouseName] = [pw.quantity]
             if orders_warehouse > 0:
-                print(datetime.now() - timedelta(days=90))
                 if datetime.now() - timedelta(days=90) > min_order_date[0]:
                     quantity_till = int(pw.quantity / (orders_warehouse / 91))
                 else:
@@ -66,5 +65,5 @@ def get_warehouse_quantity(db_request, orders, product_warehouse):
                 quantity_total += pw.quantity
                 wh_counter += 1
     quantity_till_total = int(quantity_till_total/wh_counter)
-        
+    logging.info(f'warehouses: {warehouses}')
     return warehouses, quantity_till_total, quantity_total

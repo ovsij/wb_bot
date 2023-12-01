@@ -239,7 +239,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
     abc, abc_percent = abc_analysis.get_abc(db_request, product_id=product.id, seller_id=product.seller.id)
     abc_emoji = '🟩' if abc == 'A' else '🟧' if abc == 'B' else '🟥'
     warehouses, quantity_till_total, quantity_total = get_warehouse_quantity(db_request, orders, product_warehouse)
-    
+
     try:
         logistic_price = f": {LOGISTICS[sale.warehouseName]}₽"
         
@@ -346,24 +346,6 @@ async def inline_kb_add_order(db_request, order_id, minus_total):
                    sep='\n')
     return text.as_html()
         
-async def update_sellers():
-    while True:
-        tasks = set()
-        db_request = DbRequests()
-        for seller in db_request.get_seller():
-            if seller.is_active:
-                task = asyncio.create_task(update_seller(seller))
-                tasks.add(task)
-            elif not seller.activation_date:
-                if await Statistics.check_orders(db_request, seller, period='today'):
-                    # если в течение последних 100 дней были заказы активируем продавца
-                    db_request.update_seller(id=seller.id, is_active=True, activation_date=datetime.now())
-                    task = asyncio.create_task(update_seller(seller, tariff=True))
-                    tasks.add(task)
-
-        results = await asyncio.gather(*tasks)
-        logging.info(f'tasks update_sellers created: {datetime.now()}')
-        await asyncio.sleep(900)
 
 
 async def update_stocks(db_request, seller):
@@ -519,15 +501,6 @@ async def update_sales(db_request, seller):
         total_new_sales = len(new_sales)
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
-                """
-                text, reply_markup = await inline_kb_new_sale(db_request, sale_id=sale.id, employee=employee, minus_total=total_new_sales)
-                total_new_sales -= 1
-                user = db_request.get_user(id=employee.user.id)
-                try:
-                    photo = FSInputFile(f'bot/database/images/{sale.nmId}.jpg', 'rb')
-                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
-                except Exception as ex:
-                    logging.warning(ex)"""
                 for _, new_sale_lst in new_sales.items():
                     text = None
                     if len(new_sale_lst) == 1:
@@ -574,6 +547,28 @@ async def update_sales(db_request, seller):
                             logging.warning(ex)
 
 
+
+async def update_sellers():
+    while True:
+        tasks = set()
+        db_request = DbRequests()
+        for seller in db_request.get_seller():
+            if seller.is_active:
+                task = asyncio.create_task(update_seller(seller))
+                tasks.add(task)
+            elif not seller.activation_date:
+                if await Statistics.check_orders(db_request, seller, period='today'):
+                    # если в течение последних 100 дней были заказы активируем продавца
+                    db_request.update_seller(id=seller.id, is_active=True, activation_date=datetime.now())
+                    task = asyncio.create_task(update_seller(seller, tariff=True))
+                    tasks.add(task)
+
+        results = await asyncio.gather(*tasks)
+        logging.info(f'tasks update_sellers created: {datetime.now()}')
+        await asyncio.sleep(900)
+
+
+
 async def update_seller(seller, tariff : bool = None):
     db_request = DbRequests()
     start = datetime.now()
@@ -593,16 +588,16 @@ async def update_seller(seller, tariff : bool = None):
             tariff = 1690
         db_request.update_seller(id=seller.id, tariff=tariff)
 
-    """try:
+    try:
         await update_stocks(db_request, seller)
     except Exception as ex:
-        logging.warning(f'{seller} stock ex - {ex}')"""
+        logging.warning(f'{seller} stock ex - {ex}')
 
 
-    #try:
-    await update_orders(db_request, seller)
-    #except Exception as ex:
-    #    logging.warning(f'{seller} orders ex - {ex}')
+    try:
+        await update_orders(db_request, seller)
+    except Exception as ex:
+        logging.warning(f'{seller} orders ex - {ex}')
 
 
     try:
