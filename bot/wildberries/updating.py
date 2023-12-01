@@ -134,7 +134,10 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
                    sep='\n'
                    )
     for name, quantity in warehouses.items():
-        text += as_line(f'📦 {name}: {quantity[0]} шт. хватит на {quantity[1]} дн.')
+        try:
+            text += as_line(f'📦 {name}: {quantity[0]} шт. хватит на {quantity[1]} дн.')
+        except:
+            ...
 
     if len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
@@ -272,17 +275,22 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
                    '',
                    sep='\n'
                    )
+    
+
     for name, quantity in warehouses.items():
         try:
             text += as_line(f'📦 {name}: {quantity[0]} шт. хватит на {quantity[1]} дн.')
         except:
             ...
 
+    if len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
+        text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
+    elif len(warehouses) > 1 and employee.stock_reserve > quantity_till_total:
+        text += as_line(f'📦 Всего: {quantity_total} шт. хватит на ⚠️ {quantity_till_total} дн.')
+    
     if employee.stock_reserve > quantity_till_total:
             income = int((len(orders_list)/91) * employee.stock_reserve - quantity_total)
             text += as_line(f'🚗 Пополните склад на {income} шт.')
-    elif len(warehouses) > 1 and employee.stock_reserve < quantity_till_total:
-        text += as_line(f'📦 Всего: {quantity_total} шт. хватит на {quantity_till_total} дн.')
     
     if employee.is_key_words and search:
         #print(order.nmId)
