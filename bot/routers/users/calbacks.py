@@ -260,6 +260,11 @@ async def user_callback_query_handler(callback_query: types.CallbackQuery, state
                                         cancel_notif=False)
         text, reply_markup = inline_kb_notifcancel(db_request, seller_id=seller_id, employee_id=employee.id)
         await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+    if 'chat' in code:
+        seller_id = code.split('_')[-1]
+        text, reply_markup = inline_kb_chat(db_request, seller_id=seller_id)
+        await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
+    
     if code == 'balanсe':
         await state.clear()
         text, reply_markup = inline_kb_balance(db_request, tg_id=tg_id)

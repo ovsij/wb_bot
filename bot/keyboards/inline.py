@@ -257,6 +257,7 @@ def inline_kb_shop_settings(db_request, seller_id : int, tg_id : str):
     text_and_data.append(['🔑 API токен FBS (стандартный)', f'apifbs_{seller_id}'])
     text_and_data.append(['🧑‍💼 Сотрудники', f'add_employee_{seller_id}'])
     text_and_data.append(['🔔 Уведомления', f'notifications_{seller_id}'])
+    text_and_data.append(['📩 Уведомления в чат', f'chat_{seller_id}'])
     text_and_data.append(['❌ Удалить поставщика', f'delapifbo_{seller_id}_{employee.id}'])
     text_and_data.append(btn_back('settings'))
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)

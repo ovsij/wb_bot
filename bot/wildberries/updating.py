@@ -88,20 +88,21 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
     inWayFromClient = sum([p.inWayFromClient for p in product_warehouse])
     sales = len(sales_list)
     gNumbers = [s['gNumber'] for s in sales_list]
-    orders = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=90)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    orders_90 = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=90)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    orders_76 = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=76)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
     today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
-    today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == datetime.now().date()]
-    yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == order.nmId]
-    orders_list = [o for o in orders if o['gNumber'] in gNumbers]
-    saled_orders = [s['order'] for s in sales_list]
+    today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders_76 if o['date'].date() == datetime.now().date()]
+    yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders_76 if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == order.nmId]
+    #orders_list = [o for o in orders if o['gNumber'] in gNumbers]
+    #saled_orders = [s['order'] for s in sales_list]
     try:
-        buyout = int((sales/len(orders_list)) * 100)
+        buyout = int((sales/len(orders_76)) * 100)
     except:
         buyout = 0
     abc, abc_percent = abc_analysis.get_abc(db_request, product_id=product.id, seller_id=product.seller.id)
     abc_emoji = '🟩' if abc == 'A' else '🟧' if abc == 'B' else '🟥'
     
-    warehouses, quantity_till_total, quantity_total = get_warehouse_quantity(db_request, orders, product_warehouse)
+    warehouses, quantity_till_total, quantity_total = get_warehouse_quantity(db_request, orders_90, product_warehouse)
 
     try:
         logistic_price = f": {LOGISTICS[order.warehouseName]}₽"
@@ -126,7 +127,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
                    f'💶 Вчера таких: {len(yesterday_orders_such)} на {int(sum(yesterday_orders_such))}₽',
                    f'{abc_emoji} ABC-анализ: {abc} ({abc_percent}%)',
                    f'💼 Комиссия базовая: {round(price * (comission/100), 2)}₽ ({comission}%)',
-                   f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_list)})',
+                   f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_76)})',
                    f'🌐 {order.warehouseName} → {order.oblast}{logistic_price}',
                    f'🚛 В пути до клиента: {inWayToClient}',
                    f'🚚 В пути возвраты: {inWayFromClient}',
@@ -145,7 +146,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на ⚠️ {quantity_till_total} дн.')
     
     if employee.stock_reserve > quantity_till_total:
-            income = int((len(orders_list)/91) * employee.stock_reserve - quantity_total)
+            income = int((len(orders_90)/90) * employee.stock_reserve - quantity_total)
             text += as_line(f'🚗 Пополните склад на {income} шт.')
     
     
@@ -233,15 +234,17 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
     inWayFromClient = sum([p.inWayFromClient for p in product_warehouse])
     sales = len(sales_list) - inWayFromClient
     gNumbers = [s['gNumber'] for s in sales_list]
-    orders = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    orders_90 = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=90)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    orders_76 = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=76)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    
     today_sales = [s['priceWithDisc'] for s in db_request.get_sale(seller_id=product.seller.id, select_for='reports', period='today', type=str(sale.saleID)[0])]
     today_sales_such = [s['priceWithDisc'] for s in sales_list if s['date'].date() == datetime.now().date()]
     yesterday_sales_such = [s['priceWithDisc'] for s in sales_list if s['date'].date() == (datetime.now() - timedelta(days=1)).date()]
-    orders_list = [o for o in orders if o['gNumber'] in gNumbers]
-    buyout = int((sales/len(orders_list)) * 100)
+    #orders_list = [o for o in orders if o['gNumber'] in gNumbers]
+    buyout = int((sales/len(orders_76)) * 100)
     abc, abc_percent = abc_analysis.get_abc(db_request, product_id=product.id, seller_id=product.seller.id)
     abc_emoji = '🟩' if abc == 'A' else '🟧' if abc == 'B' else '🟥'
-    warehouses, quantity_till_total, quantity_total = get_warehouse_quantity(db_request, orders, product_warehouse)
+    warehouses, quantity_till_total, quantity_total = get_warehouse_quantity(db_request, orders_90, product_warehouse)
 
     try:
         logistic_price = f": {LOGISTICS[sale.warehouseName]}₽"
@@ -268,7 +271,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
                    f'💶 Вчера таких: {len(yesterday_sales_such)} на {int(sum(yesterday_sales_such))}₽',
                    f'{abc_emoji} ABC-анализ: {abc} ({abc_percent}%)',
                    f'💼 Комиссия базовая: {round(price * (1 - comission/100), 2)}₽ ({comission}%)',
-                   f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_list)})',
+                   f'💎 Выкуп за 3 мес: {buyout}% ({sales}/{len(orders_76)})',
                    f'🌐 {sale.warehouseName} → {sale.regionName}{logistic_price}',
                    f'🚛 В пути до клиента: {inWayToClient}',
                    f'🚚 В пути возвраты: {inWayFromClient}',
@@ -289,7 +292,7 @@ async def inline_kb_new_sale(db_request, sale_id : int, employee : int, minus_to
         text += as_line(f'📦 Всего: {quantity_total} шт. хватит на ⚠️ {quantity_till_total} дн.')
     
     if employee.stock_reserve > quantity_till_total:
-            income = int((len(orders_list)/91) * employee.stock_reserve - quantity_total)
+            income = int((len(orders_90)/90) * employee.stock_reserve - quantity_total)
             text += as_line(f'🚗 Пополните склад на {income} шт.')
     
     if employee.is_key_words and search:
