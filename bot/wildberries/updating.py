@@ -394,6 +394,7 @@ async def update_orders(db_request, seller, sending):
     new_orders = {}
     if orders:
         logging.info(f'{seller.name}[{seller.id}] got {len(orders)} orders. Time: {datetime.now()}')
+        c = 0
         for order in orders:
             new_order = db_request.create_order(seller_id=seller.id,
                                     gNumber=order['gNumber'],
@@ -418,6 +419,7 @@ async def update_orders(db_request, seller, sending):
                                     srid=order['srid'],
                                     orderType=order['orderType'],)
             if new_order != None:
+                c += 1
                 try:
                     new_orders[order['nmId']] += [new_order]
                 except:
@@ -425,7 +427,7 @@ async def update_orders(db_request, seller, sending):
         if not sending:
             return
         total_new_orders = len(new_orders)
-        print(f'total_new_orders {total_new_orders}')
+        print(f'total_new_orders {c}')
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
                 for _, new_order_lst in new_orders.items():
