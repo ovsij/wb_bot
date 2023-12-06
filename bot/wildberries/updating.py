@@ -363,7 +363,7 @@ async def inline_kb_add_order(db_request, order_id, minus_total):
 async def update_stocks(db_request, seller):
     logging.info(f'{seller.name}[{seller.id}] started stocks. Time: {datetime.now()}')
     """UPDATING STOCKS"""
-    stocks = await Statistics.get_stocks(token=seller.token)
+    stocks = await Statistics.get_stocks(seller=seller)
     for product in stocks:
         #await Statistics.get_nomenclature(db_request, seller, product['supplierArticle'])
         rating, reviews = await WbParser.get_rating(article=product['nmId'])
