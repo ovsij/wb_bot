@@ -38,7 +38,8 @@ async def payment(db_request, seller):
         for employee in users:
             if employee.is_admin:
                 paymet_sum = round(seller.tariff / DAYS[datetime.now().month - 1], 2)
-                if db_request.get_user(id=employee.user.id).balance >= paymet_sum:
+                user = db_request.get_user(id=employee.user.id)
+                if user.balance >= paymet_sum:
                     db_request.create_transaction(user_id=employee.user.id, 
                                                 sum=paymet_sum, 
                                                 type=False,
@@ -46,7 +47,7 @@ async def payment(db_request, seller):
                                                 seller_name=seller.name, 
                                                 )
                     db_request.update_seller(id=seller.id, is_active=True, last_payment_date=datetime.now())
-                    logging.info(f'User {employee} paid for {seller.name}[{seller.id}] {paymet_sum}')
+                    logging.info(f'User {user.username}({user.tg_id}) paid for {seller.name}[{seller.id}] {paymet_sum}')
                     break
         try:
             seller = db_request.get_seller(id=seller.id)

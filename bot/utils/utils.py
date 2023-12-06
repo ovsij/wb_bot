@@ -64,6 +64,9 @@ def get_warehouse_quantity(db_request, orders, product_warehouse):
                 quantity_till_total += quantity_till
                 quantity_total += pw.quantity
                 wh_counter += 1
-    quantity_till_total = int(quantity_till_total/wh_counter)
+    try:
+        quantity_till_total = int(quantity_till_total/wh_counter)
+    except:
+        quantity_till_total = 0
     logging.info(f'warehouses: {warehouses}')
     return warehouses, quantity_till_total, quantity_total

@@ -388,7 +388,7 @@ async def update_stocks(db_request, seller):
                                 rating=rating,
                                 reviews=reviews)
 
-async def update_orders(db_request, seller):
+async def update_orders(db_request, seller, sending):
     orders = await Statistics.get_orders(db_request, seller)
     new_orders = {}
     if orders:
@@ -421,6 +421,8 @@ async def update_orders(db_request, seller):
                     new_orders[order['nmId']] += [new_order]
                 except:
                     new_orders[order['nmId']] = [new_order]
+        if not sending:
+            return
         total_new_orders = len(new_orders)
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
@@ -469,7 +471,7 @@ async def update_orders(db_request, seller):
                             logging.warning(ex)
 
 
-async def update_sales(db_request, seller):
+async def update_sales(db_request, seller, sending):
     sales = await Statistics.get_sales(db_request, seller)
     if sales:
         logging.info(f'{seller.name}[{seller.id}] got {len(sales)} sales. Time: {datetime.now()}')
@@ -509,6 +511,8 @@ async def update_sales(db_request, seller):
                 except:
                     new_sales[sale['nmId']] = [new_sale]
         logging.info(new_sales)
+        if not sending:
+            return
         total_new_sales = len(new_sales)
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
@@ -543,6 +547,7 @@ async def update_sales(db_request, seller):
                                         total_new_sales -= 1
                                         text += await inline_kb_new_sale_addit(db_request, sale_id=addit_sale.id, minus_total=total_new_sales)
                                 user = db_request.get_user(id=employee.user.id)
+                                
                                 try:
                                     photo = FSInputFile(f'bot/database/images/{addit_sale.nmId}.jpg', 'rb')
                                     await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
@@ -599,6 +604,8 @@ async def update_seller(seller, tariff : bool = None):
             tariff = 1690
         db_request.update_seller(id=seller.id, tariff=tariff)
 
+    sending = True if not tariff else False
+
     try:
         await update_stocks(db_request, seller)
     except Exception as ex:
@@ -606,13 +613,13 @@ async def update_seller(seller, tariff : bool = None):
 
 
     try:
-        await update_orders(db_request, seller)
+        await update_orders(db_request, seller, sending=sending)
     except Exception as ex:
         logging.warning(f'{seller} orders ex - {ex}')
 
 
     try:
-        await update_sales(db_request, seller)
+        await update_sales(db_request, seller, sending=sending)
     except Exception as ex:
         logging.warning(f'{seller} sales ex - {ex}')
 

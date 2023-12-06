@@ -257,7 +257,7 @@ def inline_kb_shop_settings(db_request, seller_id : int, tg_id : str):
     text_and_data.append(['🔑 API токен FBS (стандартный)', f'apifbs_{seller_id}'])
     text_and_data.append(['🧑‍💼 Сотрудники', f'add_employee_{seller_id}'])
     text_and_data.append(['🔔 Уведомления', f'notifications_{seller_id}'])
-    text_and_data.append(['📩 Уведомления в чат', f'chat_{seller_id}'])
+    text_and_data.append(['📩 Уведомления в группе', f'chat_{seller_id}'])
     text_and_data.append(['❌ Удалить поставщика', f'delapifbo_{seller_id}_{employee.id}'])
     text_and_data.append(btn_back('settings'))
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data)
@@ -1517,3 +1517,25 @@ def inline_kb_reissuetoken():
     schema = [2]
     reply_markup = InlineConstructor.create_kb(text_and_data=text_and_data, schema=schema)
     return text.as_html(), reply_markup
+
+async def inline_kb_chat(db_request, seller_id):
+    seller = db_request.get_seller(id=seller_id)
+    if seller.chat_id:
+        from bot import bot
+        chat = await bot.get_chat(chat_id=seller.chat_id)
+        text = as_line(f'✅ К продавцу подключена группа:\n{chat.title} (ID: {seller.chat_id})\n')
+    else:
+        text = as_line(f'❌ К продавцу пока не подключена ни одна группа')
+
+    text += as_line('Подключив группу к продавцу вы будете ежедневно получать рассылку о заказах, выкупах, возвратах и необходимости пополнить склады с указанием конкретных товаров и складов.',
+                    '',
+                    'Для подключения:',
+                    '• Добавьте бота @wbconcierge_bot в администраторы вашей группы.',
+                    '• Пришлите сообщение в группе с командой /connect',
+                    '',
+                    'Вы должны быть администратором продавца и подписка должна быть активна.',
+                    'Подкючить к одной группе можно неограниченное количество продавцов.', 
+                    sep='\n')
+    reply_markup = InlineConstructor.create_kb([btn_back(f'settings_{seller_id}')])
+    return text.as_html(), reply_markup
+        

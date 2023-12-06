@@ -93,7 +93,7 @@ class DbRequests:
         return seller
     
     @db_session()
-    def get_seller(self, id : int = None, user_id : int = None, test_period : bool = None):
+    def get_seller(self, id : int = None, user_id : int = None, test_period : bool = None, chats : bool = None):
         if id:
             return Seller[id]
         elif user_id:
@@ -103,8 +103,12 @@ class DbRequests:
                 return select(s.seller for s in User[user_id].sellers)[:]
         elif test_period != None:
             return select(s for s in Seller if s.test_period == test_period)[:]
+        elif chats:
+            query = select((s.id, s.chat_id) for s in Seller if s.chat_id)[:]
+            return [{'id': q[0], 'chat_id': q[1]} for q in query]
         else:
             return select(s for s in Seller)[:]
+        
     
     @db_session()
     def update_seller(self, id : int, 
@@ -118,7 +122,9 @@ class DbRequests:
                       is_active : bool = None,
                       activation_date : datetime = None,
                       test_period : bool = None, 
-                      last_payment_date : datetime = None, ):
+                      last_payment_date : datetime = None, 
+                      update_chat : bool = None,
+                      chat_id : str = None):
         seller_to_update = Seller[id]
         if name:
             seller_to_update.name = name
@@ -142,6 +148,8 @@ class DbRequests:
             seller_to_update.test_period = test_period
         if last_payment_date:
             seller_to_update.last_payment_date = last_payment_date
+        if update_chat:
+            seller_to_update.chat_id = chat_id
         return seller_to_update
     
     @db_session()

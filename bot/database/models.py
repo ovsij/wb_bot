@@ -48,6 +48,7 @@ class Seller(db.Entity):
     activation_date = Optional(datetime, nullable=True)
     last_payment_date = Optional(datetime, nullable=True)
     test_period = Optional(bool, default = False)
+    chat_id = Optional(str, nullable=True)
     products = Set("Product")
     users = Set("User_Seller")
 
