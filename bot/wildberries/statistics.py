@@ -28,7 +28,7 @@ class Statistics:
                 else:
                     await asyncio.sleep(5)
                     print(f'Заказы {seller} Попытка {i}')
-                    return await Statistics.get_orders(seller, i=i+1)
+                    return await Statistics.get_stocks(seller, i=i+1)
     
     async def get_orders(db_request, seller, per_month = None, i = 1):
         headers = {'Authorization': seller.token}
