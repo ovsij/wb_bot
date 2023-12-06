@@ -35,7 +35,7 @@ async def cmd_create(message: Message, db_request: DbRequests):
     if len(seller) == 0:
         await message.answer("У вас нет активных продавцов, пополните счет и подключите продавцов в личном кабинете бота.")
     elif len(seller) == 1:
-        db_request.update_seller(id=seller[0].id, chat_id=str(message.chat.id))
+        db_request.update_seller(id=seller[0].id, chat_id=str(message.chat.id), update_chat=True)
         await message.answer(f"Продавец \"{seller[0].name}\" подключен к данному чату (ID: {message.chat.id}).\nТеперь ежедневные уведомления будут приходить сюда.")
     else:
         text, reply_markup = inline_kb_selectseller(sellers=seller, chat_id=str(message.chat.id))
