@@ -492,7 +492,8 @@ class DbRequests:
             flush()
             return order
         else:
-            print(f'order уже есть {srid}')
+            if date.date() == date().today(): 
+                print(f'order уже есть {srid} ({date})')
             return None
                   
     @db_session()
