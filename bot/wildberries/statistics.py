@@ -8,6 +8,7 @@ class Statistics:
             url = 'https://statistics-api.wildberries.ru/api/v1/supplier/reportDetailByPeriod'
             datetime_now = datetime.now()
             params = {'dateFrom': (datetime_now - timedelta(days=10)).strftime('%Y-%m-%d'), 'dateTo': datetime_now.strftime('%Y-%m-%d')}
+            await asyncio.sleep(1)
             async with session.get(url, params=params, ssl=False) as response:
                 if response.status == 200:
                     result = await response.json()
@@ -15,8 +16,8 @@ class Statistics:
                 else:
                     return False
 
-    async def get_stocks(token):
-        headers = {'Authorization': token}
+    async def get_stocks(seller, i=1):
+        headers = {'Authorization': seller.token}
         async with aiohttp.ClientSession(headers=headers, trust_env=True) as session:
             url = 'https://statistics-api.wildberries.ru/api/v1/supplier/stocks'
             params = {'dateFrom': '2019-06-20'}
@@ -25,8 +26,9 @@ class Statistics:
                     result = await response.json()
                     return result
                 else:
-                    print(response)
-                    return False
+                    await asyncio.sleep(5)
+                    print(f'Заказы {seller} Попытка {i}')
+                    return await Statistics.get_orders(seller, i=i+1)
     
     async def get_orders(db_request, seller, per_month = None, i = 1):
         headers = {'Authorization': seller.token}
@@ -50,8 +52,8 @@ class Statistics:
                 else:
                     print(f'{seller} orders list is empty')
             
-                    await asyncio.sleep(10)
-                    print(f'Попытка {i}')
+                    await asyncio.sleep(5)
+                    print(f'Заказы {seller} Попытка {i}')
                     return await Statistics.get_orders(db_request, seller, i=i+1)
     
     async def get_sales(db_request, seller):
