@@ -25,6 +25,7 @@ class Statistics:
                     result = await response.json()
                     return result
                 else:
+                    print(response)
                     return False
     
     async def get_orders(db_request, seller, per_month = None, i = 1):
