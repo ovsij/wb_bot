@@ -26,7 +26,7 @@ class Statistics:
                     result = await response.json()
                     return result
                 else:
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(15)
                     print(f'Заказы {seller} Попытка {i}')
                     return await Statistics.get_stocks(seller, i=i+1)
     
