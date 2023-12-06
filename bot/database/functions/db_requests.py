@@ -492,7 +492,7 @@ class DbRequests:
             flush()
             return order
         else:
-            if date.date() == date().today(): 
+            if date.strptime("%Y-%m-%d").date() == date().today(): 
                 print(f'order уже есть {srid} ({date})')
             return None
                   
