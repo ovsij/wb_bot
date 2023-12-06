@@ -27,7 +27,7 @@ class Statistics:
                 else:
                     return False
     
-    async def get_orders(db_request, seller, per_month = None):
+    async def get_orders(db_request, seller, per_month = None, i = 1):
         headers = {'Authorization': seller.token}
         async with aiohttp.ClientSession(headers=headers, trust_env=True) as session:
             url = 'https://statistics-api.wildberries.ru/api/v1/supplier/orders'
@@ -39,7 +39,7 @@ class Statistics:
             
             if per_month:
                 params = {'dateFrom': (date.today() - timedelta(days=30)).strftime('%Y-%m-%d')}
-            
+            await asyncio.sleep(1)
             async with session.get(url, params=params, ssl=False) as response:
                 if response.status == 200:
                     result = await response.json()
@@ -47,12 +47,11 @@ class Statistics:
                 elif response.status == 401:
                     print(f'Orders {seller} Unauthorized response')
                 else:
-                    print('orders list is empty')
-                    print(seller.token)
-                    print(response)
+                    print(f'{seller} orders list is empty')
             
                     await asyncio.sleep(10)
-                    return await Statistics.get_orders(db_request, seller)
+                    print(f'Попытка {i}')
+                    return await Statistics.get_orders(db_request, seller, i=i+1)
     
     async def get_sales(db_request, seller):
         headers = {'Authorization': seller.token}
@@ -70,7 +69,7 @@ class Statistics:
                 elif response.status == 401:
                     print(f'Sales {seller} Unauthorized response')
                 else:
-                    print('sales list is empty')
+                    print(f'{seller} sales list is empty')
                     print(response)
                     await asyncio.sleep(10)
                     return await Statistics.get_sales(db_request, seller)

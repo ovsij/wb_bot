@@ -91,6 +91,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
     orders_90 = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=90)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
     orders_76 = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=76)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
     today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
+    print(today_orders)
     today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders_76 if o['date'].date() == datetime.now().date()]
     yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders_76 if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == order.nmId]
     #orders_list = [o for o in orders if o['gNumber'] in gNumbers]
@@ -394,6 +395,7 @@ async def update_orders(db_request, seller, sending):
     if orders:
         logging.info(f'{seller.name}[{seller.id}] got {len(orders)} orders. Time: {datetime.now()}')
         for order in orders:
+            print(order)
             new_order = db_request.create_order(seller_id=seller.id,
                                     gNumber=order['gNumber'],
                                     date=order['date'],
@@ -606,16 +608,16 @@ async def update_seller(seller, tariff : bool = None):
 
     sending = True if not tariff else False
 
-    try:
-        await update_stocks(db_request, seller)
-    except Exception as ex:
-        logging.warning(f'{seller} stock ex - {ex}')
+    #try:
+    await update_stocks(db_request, seller)
+    #except Exception as ex:
+    logging.warning(f'{seller} stock ex - {ex}')
 
 
-    try:
-        await update_orders(db_request, seller, sending=sending)
-    except Exception as ex:
-        logging.warning(f'{seller} orders ex - {ex}')
+    #try:
+    await update_orders(db_request, seller, sending=sending)
+    #except Exception as ex:
+    logging.warning(f'{seller} orders ex - {ex}')
 
 
     try:
