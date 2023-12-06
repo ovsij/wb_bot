@@ -492,6 +492,7 @@ class DbRequests:
             flush()
             return order
         else:
+            print(f'order уже есть {srid}')
             return None
                   
     @db_session()
