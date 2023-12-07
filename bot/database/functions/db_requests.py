@@ -460,7 +460,7 @@ class DbRequests:
                      sticker : str, 
                      srid : str, 
                      orderType : str, ):
-        if not Order.exists(srid=srid):
+        if not Order.exists(seller=Seller[seller_id], srid=srid):
             product = Product.get(barcode=barcode, seller=Seller[seller_id])
             if not product:
                 #print(f'product {barcode} не найден')
@@ -500,10 +500,10 @@ class DbRequests:
     def get_order(self, id : int = None, odid : int = None, gNumber : int = None, seller_id : int = None, product_id : int = None, period : str = None, select_for : str = None, tg_id : str = None, search : str = None, warehouse = None, min_date : bool = None):
         if id:
             return Order[id]
-        elif odid:
-            return Order.get(odid=odid)
+        #elif odid:
+        #    return Order.get(odid=odid)
         elif gNumber:
-            return Order.get(gNumber=gNumber)
+            return Order.get(gNumber=gNumber, seller=Seller[seller_id])
         elif seller_id:
             if select_for == 'reports':
                 if period == 'today':
@@ -582,12 +582,12 @@ class DbRequests:
                      brand : str, 
                      sticker : str, 
                      srid : str, ):
-        if not Sale.exists(saleID=saleID):
+        if not Sale.exists(saleID=saleID, seller=Seller[seller_id]):
             product = Product.get(barcode=barcode, seller=Seller[seller_id])
             if not product:
                 return
             try:
-                order = self.get_order(gNumber=gNumber)
+                order = self.get_order(gNumber=gNumber, seller=Seller[seller_id])
             except:
                 order = None
             sale = Sale(product=product,
