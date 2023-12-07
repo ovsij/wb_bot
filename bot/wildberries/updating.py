@@ -462,7 +462,7 @@ async def update_orders(db_request, seller, sending):
                                 user = db_request.get_user(id=employee.user.id)
                                 try:
                                     photo = FSInputFile(f'bot/database/images/{addit_order.nmId}.jpg', 'rb')
-                                    await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                                    #await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
                                 except Exception as ex:
                                     logging.warning(ex)
                         return
@@ -562,7 +562,7 @@ async def update_sales(db_request, seller, sending):
                         user = db_request.get_user(id=employee.user.id)
                         try:
                             photo = FSInputFile(f'bot/database/images/{new_sale_lst[0].nmId}.jpg', 'rb')
-                            await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
+                            #await bot.send_photo(user.tg_id, photo=photo, caption=text, reply_markup=reply_markup)
                         except Exception as ex:
                             logging.warning(ex)
 
