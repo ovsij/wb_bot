@@ -426,7 +426,7 @@ async def update_orders(db_request, seller, sending):
                     new_orders[order['nmId']] = [new_order]
         if not sending:
             return
-        total_new_orders = len(new_orders)
+        total_new_orders = len(new_orders) - 1
         print(f'total_new_orders {c}')
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
@@ -516,7 +516,7 @@ async def update_sales(db_request, seller, sending):
                     new_sales[sale['nmId']] = [new_sale]
         if not sending:
             return
-        total_new_sales = len(new_sales)
+        total_new_sales = len(new_sales) -1 
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
                 for _, new_sale_lst in new_sales.items():
