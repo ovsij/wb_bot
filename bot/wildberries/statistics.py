@@ -14,6 +14,7 @@ class Statistics:
                 print(response)
                 if response.status == 200:
                     result = await response.json()
+                    print(result)
                     return result
                 else:
                     logging.info(response)
