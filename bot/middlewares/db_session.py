@@ -26,10 +26,15 @@ class DbSessionMiddleware(BaseMiddleware):
         msg_text = None
         if event.message:
             tg_user: types.User = event.message.from_user
+            print('message')
+            print(tg_user)
             msg_text = event.message.text
         elif event.callback_query:
             tg_user: types.User = event.callback_query.from_user
+            print('callback_query')
+            print(tg_user)
         user = db_requests.get_user(tg_id=str(tg_user.id))
+        print(user)
         data["user"] = user
         # register user if not exists
         if not user:
