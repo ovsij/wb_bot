@@ -8,7 +8,7 @@ class Statistics:
         async with aiohttp.ClientSession(headers=headers, trust_env=True) as session:
             url = 'https://statistics-api.wildberries.ru/api/v1/supplier/reportDetailByPeriod'
             datetime_now = datetime.now()
-            params = {'dateFrom': (datetime_now - timedelta(days=10)).strftime('%Y-%m-%d'), 'dateTo': datetime_now.strftime('%Y-%m-%d')}
+            params = {'dateFrom': (datetime_now - timedelta(days=100)).strftime('%Y-%m-%d'), 'dateTo': datetime_now.strftime('%Y-%m-%d')}
             print(params)
             await asyncio.sleep(1)
             async with session.get(url, params=params, ssl=False) as response:
