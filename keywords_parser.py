@@ -42,6 +42,7 @@ async def main(start_num):
                 for i in range((num - 1) * 2000, num * 2000):
                     keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
                     tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session, i)))
+                    await asyncio.sleep(3)
                 results = await asyncio.gather(*tasks)
             except:
                 #if num == 50:
