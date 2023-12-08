@@ -391,7 +391,6 @@ async def update_stocks(db_request, seller):
 
 async def update_orders(db_request, seller, sending):
     orders = await Statistics.get_orders(db_request, seller)
-    print(len(orders))
     new_orders = {}
     if orders:
         logging.info(f'{seller.name}[{seller.id}] got {len(orders)} orders. Time: {datetime.now()}')
@@ -427,7 +426,7 @@ async def update_orders(db_request, seller, sending):
                     new_orders[order['nmId']] = [new_order]
         if not sending:
             return
-        total_new_orders = len(new_orders)
+        total_new_orders = len(new_orders) - 1
         print(f'total_new_orders {c}')
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
