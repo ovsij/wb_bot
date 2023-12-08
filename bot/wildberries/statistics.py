@@ -11,7 +11,6 @@ class Statistics:
             params = {'dateFrom': (datetime_now - timedelta(days=100)).strftime('%Y-%m-%d'), 'dateTo': datetime_now.strftime('%Y-%m-%d')}
             await asyncio.sleep(1)
             async with session.get(url, params=params, ssl=False) as response:
-                print(await response.text())
                 if response.status == 200:
                     result = await response.json()
                     return result
