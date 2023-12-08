@@ -612,13 +612,17 @@ async def update_seller(seller, tariff : bool = None):
     sending = True if not tariff else False
 
     #try:
+    print('stocks')
     await update_stocks(db_request, seller)
+    print('stocks fin')
     #except Exception as ex:
     #logging.warning(f'{seller} stock ex - {ex}')
 
 
     #try:
+    print('orders')
     await update_orders(db_request, seller, sending=sending)
+    print('orders fn')
     #except Exception as ex:
     #logging.warning(f'{seller} orders ex - {ex}')
 
