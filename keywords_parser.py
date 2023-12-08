@@ -32,14 +32,14 @@ async def main(start_num):
         
         start = datetime.now()
         session = aiohttp.ClientSession(trust_env=True)
-        for num in range(start_num, 101):
+        for num in range(start_num, 1001):
             try:
                 logging.info(f'i: {num}')
                 time = datetime.now()
-                logging.info(f'start: {(num - 1) * 10000} : {num * 10000}')
+                logging.info(f'start: {(num - 1) * 1000} : {num * 1000}')
                 logging.info(f'time: {time}')
                 tasks = set()
-                for i in range((num - 1) * 10000, num * 10000):
+                for i in range((num - 1) * 1000, num * 1000):
                     keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
                     tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session, i)))
                 results = await asyncio.gather(*tasks)
