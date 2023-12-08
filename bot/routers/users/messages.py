@@ -20,6 +20,7 @@ async def get_wb_token(message: Message, db_request: DbRequests, state: FSMConte
     token = message.text
     data = await state.get_data()
     report = await Statistics.get_reportDetailByPeriod(token)
+    
     if report:
         seller_name = await WbParser.get_seller_name(article=report[0]['nm_id'])
         seller_name = seller_name.replace('Индивидуальный предприниматель', 'ИП')

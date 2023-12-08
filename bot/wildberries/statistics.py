@@ -1,4 +1,5 @@
 import asyncio, aiohttp
+import logging
 from datetime import date, datetime, timedelta
 
 class Statistics:
@@ -14,6 +15,7 @@ class Statistics:
                     result = await response.json()
                     return result
                 else:
+                    logging.info(response)
                     return False
 
     async def get_stocks(seller, i=1):
