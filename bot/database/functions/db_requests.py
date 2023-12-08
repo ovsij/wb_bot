@@ -460,11 +460,13 @@ class DbRequests:
                      sticker : str, 
                      srid : str, 
                      orderType : str, ):
-        if not Order.exists(seller=Seller[seller_id], srid=srid):
-            product = Product.get(barcode=barcode, seller=Seller[seller_id])
-            if not product:
-                #print(f'product {barcode} не найден')
-                return
+        
+        product = Product.get(barcode=barcode, seller=Seller[seller_id])
+        if not product:
+            #print(f'product {barcode} не найден')
+            return
+        
+        if not Order.exists(product=product, srid=srid):
             order = Order(product=product, 
                           warehouse=self.get_warehouse(warehouseName=warehouseName), 
                           gNumber=gNumber,
@@ -503,7 +505,7 @@ class DbRequests:
         #elif odid:
         #    return Order.get(odid=odid)
         elif gNumber:
-            return Order.get(gNumber=gNumber, seller=Seller[seller_id])
+            return Order.get(gNumber=gNumber, product=Product[product_id])
         elif seller_id:
             if select_for == 'reports':
                 if period == 'today':
@@ -582,12 +584,12 @@ class DbRequests:
                      brand : str, 
                      sticker : str, 
                      srid : str, ):
-        if not Sale.exists(saleID=saleID, seller=Seller[seller_id]):
+        if not Sale.exists(saleID=saleID, product=product):
             product = Product.get(barcode=barcode, seller=Seller[seller_id])
             if not product:
                 return
             try:
-                order = self.get_order(gNumber=gNumber, seller=Seller[seller_id])
+                order = self.get_order(gNumber=gNumber, product=product.id)
             except:
                 order = None
             sale = Sale(product=product,

@@ -9,18 +9,13 @@ class Statistics:
             url = 'https://statistics-api.wildberries.ru/api/v1/supplier/reportDetailByPeriod'
             datetime_now = datetime.now()
             params = {'dateFrom': (datetime_now - timedelta(days=100)).strftime('%Y-%m-%d'), 'dateTo': datetime_now.strftime('%Y-%m-%d')}
-            print(params)
             await asyncio.sleep(1)
             async with session.get(url, params=params, ssl=False) as response:
                 print(await response.text())
                 if response.status == 200:
                     result = await response.json()
-                    print('200')
-                    print(result)
                     return result
                 else:
-                    print('not 200')
-                    logging.info(response)
                     return False
 
     async def get_stocks(seller, i=1):
