@@ -584,10 +584,11 @@ class DbRequests:
                      brand : str, 
                      sticker : str, 
                      srid : str, ):
+        product = Product.get(barcode=barcode, seller=Seller[seller_id])
+        if not product:
+            return
         if not Sale.exists(saleID=saleID, product=product):
-            product = Product.get(barcode=barcode, seller=Seller[seller_id])
-            if not product:
-                return
+            
             try:
                 order = self.get_order(gNumber=gNumber, product=product.id)
             except:

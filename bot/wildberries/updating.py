@@ -515,7 +515,6 @@ async def update_sales(db_request, seller, sending):
                     new_sales[sale['nmId']] += [new_sale]
                 except:
                     new_sales[sale['nmId']] = [new_sale]
-        logging.info(new_sales)
         if not sending:
             return
         total_new_sales = len(new_sales)
@@ -611,20 +610,16 @@ async def update_seller(seller, tariff : bool = None):
 
     sending = True if not tariff else False
 
-    #try:
-    print('stocks')
-    await update_stocks(db_request, seller)
-    print('stocks fin')
-    #except Exception as ex:
-    #logging.warning(f'{seller} stock ex - {ex}')
+    try:
+        await update_stocks(db_request, seller)
+    except Exception as ex:
+        logging.warning(f'{seller} stock ex - {ex}')
 
 
-    #try:
-    print('orders')
-    await update_orders(db_request, seller, sending=sending)
-    print('orders fn')
-    #except Exception as ex:
-    #logging.warning(f'{seller} orders ex - {ex}')
+    try:
+        await update_orders(db_request, seller, sending=sending)
+    except Exception as ex:
+        logging.warning(f'{seller} orders ex - {ex}')
 
 
     try:
