@@ -391,6 +391,7 @@ async def update_stocks(db_request, seller):
 
 async def update_orders(db_request, seller, sending):
     orders = await Statistics.get_orders(db_request, seller)
+    print(len(orders))
     new_orders = {}
     if orders:
         logging.info(f'{seller.name}[{seller.id}] got {len(orders)} orders. Time: {datetime.now()}')
