@@ -1,3 +1,4 @@
+import logging
 from aiogram import F, Router, types
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.context import FSMContext
@@ -17,7 +18,7 @@ user_callbacks_router = Router()
 async def user_callback_query_handler(callback_query: types.CallbackQuery, state: FSMContext, db_request: DbRequests):
     code = callback_query.data
     tg_id = str(callback_query.from_user.id)
-    print(code)
+    logging.info(code)
     if code == 'delete_msg':
         await state.clear()
         await callback_query.message.delete()

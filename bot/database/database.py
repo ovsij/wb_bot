@@ -5,7 +5,6 @@ from bot.database.models import *
 from bot.config import load_config
 config = load_config('.env')
 
-import http.client
 
 def get_local_ip():
     try:
@@ -16,8 +15,6 @@ def get_local_ip():
         print(f"Error: {e}")
         return None
 
-print(get_local_ip())
-print(config.postgres_server.host)
 
 #db.bind(provider='sqlite', filename='database.sqlite', create_db=True)
 # локальная БД
