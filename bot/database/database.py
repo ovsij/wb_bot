@@ -8,7 +8,7 @@ import http.client
 
 def get_local_ip():
     conn = http.client.HTTPConnection("ifconfig.me")
-    conn.request("GET", "/ip")
+    conn.request("GET", "/ipv4")
     host = conn.getresponse().read()
     return host.decode('utf-8')
 print(get_local_ip())
