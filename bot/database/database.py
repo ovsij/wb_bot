@@ -4,19 +4,19 @@ from bot.database.models import *
 from bot.config import load_config
 config = load_config('.env')
 
-import socket
- 
+import http.client
+
 def get_local_ip():
-    hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
-    return local_ip
+    conn = http.client.HTTPConnection("ifconfig.me")
+    conn.request("GET", "/ip")
+    host = conn.getresponse().read()
+    return host.decode('utf-8')
 
 #db.bind(provider='sqlite', filename='database.sqlite', create_db=True)
 # локальная БД
 #db.bind(provider='postgres', user=config.postgres.user, password=config.postgres.password, host='localhost', database=config.postgres.database)
 
 # основная БД
-print(get_local_ip())
 host = 'localhost' if get_local_ip() == config.postgres_server.host else config.postgres_server.host
 db.bind(provider='postgres', user=config.postgres_server.user, password=config.postgres_server.password, host=host, database=config.postgres_server.database)
 
