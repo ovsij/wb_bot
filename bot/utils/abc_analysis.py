@@ -13,10 +13,8 @@ def get_abc(db_request, product_id, seller_id):
 
     cummulative_total = 0
     for product, revenue in sorted_products_revenue:
-        try:
-            abc_percent = revenue / (total_revenue * 100)
-        except:
-            abc_percent = 0
+        abc_percent = (revenue / total_revenue) * 100
+        
         cummulative_total += abc_percent
         if product == product_id:
             if cummulative_total <= 80:

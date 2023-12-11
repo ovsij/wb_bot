@@ -74,13 +74,13 @@ async def inline_kb_new_order_addit(db_request, order_id : int, minus_total : in
 
 
 async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_total : int, search=None):
+    print(f'minus_total {minus_total}')
     seller = db_request.get_seller(id=employee.seller.id)
     order = db_request.get_order(id=order_id)
     product = db_request.get_product(id=order.product.id)
     price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
     product_warehouse = db_request.get_product_warehouse(product_id=product.id)
     sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
-    print(sales_list)
     try:
         spp = [s['spp'] for s in sales_list if s['nmId'] == order.nmId][-1]
     except:
@@ -426,7 +426,7 @@ async def update_orders(db_request, seller, sending):
                     new_orders[order['nmId']] = [new_order]
         if not sending:
             return
-        total_new_orders = len(new_orders) - 2
+        total_new_orders = len(new_orders)
         print(f'total_new_orders {c}')
         for employee in db_request.get_employee(seller_id=seller.id):
             if any([employee.order_notif_end, employee.order_notif_ending, employee.order_notif_commission, employee.order_notif_favorites]):
@@ -609,10 +609,10 @@ async def update_seller(seller, tariff : bool = None):
 
     sending = True if not tariff else False
 
-    try:
-        await update_stocks(db_request, seller)
-    except Exception as ex:
-        logging.warning(f'{seller} stock ex - {ex}')
+    # try:
+    #     await update_stocks(db_request, seller)
+    # except Exception as ex:
+    #     logging.warning(f'{seller} stock ex - {ex}')
 
 
     try:

@@ -672,7 +672,7 @@ class DbRequests:
             if re.fullmatch('\d*.\d*.\d* - \d*.\d*.\d*', period):
                 datefrom = datetime.strptime(period.split(' - ')[0], '%d.%m.%Y')
                 dateto = datetime.strptime(period.split(' - ')[1], '%d.%m.%Y')
-                query = select((s.id, s.priceWithDisc, s.gNumber, s.nmId, s.spp, s.date, s.order) for s in Sale if s.product.id == product_id and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type) and s.order)[:]
+                query = select((s.id, s.priceWithDisc, s.gNumber, s.nmId, s.spp, s.date, s.order) for s in Sale if s.product.id == product_id and s.date.date() >= datefrom and s.date.date() <= dateto and s.saleID.startswith(type))[:]
                 return [{'priceWithDisc': q[1], 'gNumber': q[2], 'nmId': q[3], 'spp': q[4], 'date': q[5], 'order': q[6]} for q in query]
         elif tg_id:
             user = User.get(tg_id=tg_id)
