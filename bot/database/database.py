@@ -11,6 +11,8 @@ def get_local_ip():
     conn.request("GET", "/ip")
     host = conn.getresponse().read()
     return host.decode('utf-8')
+print(get_local_ip())
+print(config.postgres_server.host)
 
 #db.bind(provider='sqlite', filename='database.sqlite', create_db=True)
 # локальная БД
