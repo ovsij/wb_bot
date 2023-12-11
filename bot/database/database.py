@@ -1,3 +1,4 @@
+import requests
 from bot.database.enum import *
 from bot.database.models import *
 
@@ -7,10 +8,14 @@ config = load_config('.env')
 import http.client
 
 def get_local_ip():
-    conn = http.client.HTTPConnection("ifconfig.me")
-    conn.request("GET", "/ipv4")
-    host = conn.getresponse().read()
-    return host.decode('utf-8')
+    try:
+        response = requests.get('https://api.ipify.org?format=json')
+        data = response.json()
+        return data['ip']
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
 print(get_local_ip())
 print(config.postgres_server.host)
 
