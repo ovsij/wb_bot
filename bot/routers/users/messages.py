@@ -34,7 +34,7 @@ async def get_wb_token(message: Message, db_request: DbRequests, state: FSMConte
                 if await Statistics.check_orders(db_request, seller):
                     # если в течение последних 100 дней были заказы активируем продавца
                     db_request.update_seller(id=seller.id, is_active=True, activation_date=datetime.now(), test_period=True)
-                    asyncio.create_task(update_seller(seller, tariff=True))
+                    await asyncio.create_task(update_seller(seller, tariff=True))
 
         elif data['stage'] == 'changeapifbo':
             seller = db_request.update_seller(id=data['seller_id'], name=seller_name, token=token, products=[])

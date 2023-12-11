@@ -40,7 +40,7 @@ async def user_callback_query_handler(callback_query: types.CallbackQuery, state
     if 'del_employee' in code:
         employee_id = int(code.split('_')[-1])
         seller_id = int(code.split('_')[-2])
-        db_request.delete_employee(id=employee_id)
+        db_request.delete_seller(id=seller_id)
         text, reply_markup = inline_kb_add_employee(db_request, seller_id=seller_id, tg_id=tg_id)
         await callback_query.message.edit_text(text=text, reply_markup=reply_markup)
     if 'employee_link' in code:

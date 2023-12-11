@@ -80,6 +80,7 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
     price = round(order.totalPrice * (1 - order.discountPercent / 100), 2)
     product_warehouse = db_request.get_product_warehouse(product_id=product.id)
     sales_list = db_request.get_sale(product_id=product.id, type='S', period=f"{(datetime.now() - timedelta(days=91)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
+    print(sales_list)
     try:
         spp = [s['spp'] for s in sales_list if s['nmId'] == order.nmId][-1]
     except:
@@ -91,7 +92,6 @@ async def inline_kb_new_order(db_request, order_id : int, employee : int, minus_
     orders_90 = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=90)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
     orders_76 = db_request.get_order(product_id=product.id, period=f"{(datetime.now() - timedelta(days=76)).strftime('%d.%m.%Y')} - {datetime.now().strftime('%d.%m.%Y')}")
     today_orders = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in db_request.get_order(seller_id=product.seller.id, select_for='reports', period='today')]
-    print(today_orders)
     today_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders_76 if o['date'].date() == datetime.now().date()]
     yesterday_orders_such = [o['totalPrice'] * (1 - o['discountPercent'] / 100) for o in orders_76 if o['date'].date() == (datetime.now() - timedelta(days=1)).date() and o['nmId'] == order.nmId]
     #orders_list = [o for o in orders if o['gNumber'] in gNumbers]
