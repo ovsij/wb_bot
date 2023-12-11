@@ -16,6 +16,7 @@ def get_local_ip():
 #db.bind(provider='postgres', user=config.postgres.user, password=config.postgres.password, host='localhost', database=config.postgres.database)
 
 # основная БД
+print(get_local_ip())
 host = 'localhost' if get_local_ip() == config.postgres_server.host else config.postgres_server.host
 db.bind(provider='postgres', user=config.postgres_server.user, password=config.postgres_server.password, host=host, database=config.postgres_server.database)
 
