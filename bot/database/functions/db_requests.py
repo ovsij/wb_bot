@@ -1,4 +1,5 @@
 from datetime import datetime, date
+import logging
 import re
 
 from bot.database.database import *
@@ -682,27 +683,30 @@ class DbRequests:
 
     """KeyWord requests"""
     @db_session()
-    def create_keyword(self, keyword, requests, search_1, search_2, search_3, total, keywords):
+    def create_keyword(self, keywords):
         for keyword in keywords:
-            if KeyWord.exists(keyword=keyword['keyword'], is_today=True):
-                today_keyword = KeyWord.get(keyword=keyword['keyword'], is_today=True)
-                if KeyWord.exists(keyword=keyword['keyword'], is_today=False):
-                    yesterday_keyword = KeyWord.get(keyword=keyword['keyword'], is_today=False)
-                    yesterday_keyword.requests = today_keyword.requests
-                    yesterday_keyword.search_1 = today_keyword.search_1
-                    yesterday_keyword.search_2 = today_keyword.search_2
-                    yesterday_keyword.search_3 = today_keyword.search_3
-                    yesterday_keyword.total = today_keyword.total
+            try:
+                if KeyWord.exists(keyword=keyword['keyword'], is_today=True):
+                    today_keyword = KeyWord.get(keyword=keyword['keyword'], is_today=True)
+                    if KeyWord.exists(keyword=keyword['keyword'], is_today=False):
+                        yesterday_keyword = KeyWord.get(keyword=keyword['keyword'], is_today=False)
+                        yesterday_keyword.requests = today_keyword.requests
+                        yesterday_keyword.search_1 = today_keyword.search_1
+                        yesterday_keyword.search_2 = today_keyword.search_2
+                        yesterday_keyword.search_3 = today_keyword.search_3
+                        yesterday_keyword.total = today_keyword.total
+                    else:
+                        KeyWord(keyword=today_keyword.keyword, requests=today_keyword.requests, search_1=today_keyword.search_1, search_2=today_keyword.search_2, search_3=today_keyword.search_3, total=today_keyword.total, is_today=False)
+                    today_keyword.requests = keyword['requests']
+                    today_keyword.search_1 = keyword['search_1']
+                    today_keyword.search_2 = keyword['search_2']
+                    today_keyword.search_3 = keyword['search_3']
+                    today_keyword.total = keyword['total']
                 else:
-                    KeyWord(keyword=today_keyword.keyword, requests=today_keyword.requests, search_1=today_keyword.search_1, search_2=today_keyword.search_2, search_3=today_keyword.search_3, total=today_keyword.total, is_today=False)
-                today_keyword.requests = requests
-                today_keyword.search_1 = search_1
-                today_keyword.search_2 = search_2
-                today_keyword.search_3 = search_3
-                today_keyword.total = total
-            else:
-                KeyWord(keyword=keyword['keyword'], requests=keyword['requests'], search_1=keyword['search_1'], search_2=keyword['search_2'], search_3=keyword['search_3'], total=keyword['total'], is_today=True)
-            print(keyword['keyword'])
+                    KeyWord(keyword=keyword['keyword'], requests=keyword['requests'], search_1=keyword['search_1'], search_2=keyword['search_2'], search_3=keyword['search_3'], total=keyword['total'], is_today=True)
+            except Exception as e:
+                logging.error(f'Error add to db: {e}')
+
 
 
     @db_session()
