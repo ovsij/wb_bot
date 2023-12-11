@@ -41,9 +41,11 @@ async def main(start_num):
                 tasks = set()
                 for i in range((num - 1) * 1000, num * 1000):
                     keyword = [keywords_df.iloc[i]['keyword'], keywords_df.iloc[i]['requests']]
-                    tasks.add(asyncio.create_task(get_request(db_request, keyword, start, session, i)))
-                    await asyncio.sleep(3)
+                    tasks.add(asyncio.create_task(get_request(keyword, start, session, i)))
+                    #await asyncio.sleep(3)
                 results = await asyncio.gather(*tasks)
+                db_request.create_keyword(keywords=results)
+                logging.info(f'Added into db: {(num - 1) * 1000} : {num * 1000}')
             except:
                 #if num == 50:
                 #    break
@@ -56,7 +58,7 @@ async def main(start_num):
         logging.info(f'Finish time {end-start}')
             
 
-async def get_request(db_request, keyword, start, session, i):
+async def get_request(keyword, start, session, i):
     
     url = 'https://search.wb.ru/exactmatch/ru/common/v4/search'
     params_first = {'TestGroup': 'control', 'TestID':356, 'appType':1, 'curr': 'rub', 'dest': -1257786, 'filters': 'xsubject', 'query':keyword[0], 'resultset': 'filters'}
@@ -89,7 +91,8 @@ async def get_request(db_request, keyword, start, session, i):
         except:
             pass
     if len(products) == 3:
-        db_request.create_keyword(keyword=keyword[0], requests=keyword[1], search_1=products[0], search_2=products[1], search_3=products[2], total=total)
+        return {'keyword': keyword[0], 'requests' :keyword[1], 'search_1': products[0], 'search_2': products[1], 'search_3': products[2], 'total': total}
+        #db_request.create_keyword(keyword=keyword[0], requests=keyword[1], search_1=products[0], search_2=products[1], search_3=products[2], total=total)
 
 async def main_1():
     query = 'свитер женский'

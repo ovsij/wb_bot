@@ -494,8 +494,8 @@ class DbRequests:
             flush()
             return order
         else:
-            print(datetime.strptime(date, "%Y-%m-%dT%H:%M:%S"))
-            print(f'order уже есть {srid} ({date})')
+            #print(datetime.strptime(date, "%Y-%m-%dT%H:%M:%S"))
+            #print(f'order уже есть {srid} ({date})')
             return None
                   
     @db_session()
@@ -682,25 +682,28 @@ class DbRequests:
 
     """KeyWord requests"""
     @db_session()
-    def create_keyword(self, keyword, requests, search_1, search_2, search_3, total):
-        if KeyWord.exists(keyword=keyword, is_today=True):
-            today_keyword = KeyWord.get(keyword=keyword, is_today=True)
-            if KeyWord.exists(keyword=keyword, is_today=False):
-                yesterday_keyword = KeyWord.get(keyword=keyword, is_today=False)
-                yesterday_keyword.requests = today_keyword.requests
-                yesterday_keyword.search_1 = today_keyword.search_1
-                yesterday_keyword.search_2 = today_keyword.search_2
-                yesterday_keyword.search_3 = today_keyword.search_3
-                yesterday_keyword.total = today_keyword.total
+    def create_keyword(self, keyword, requests, search_1, search_2, search_3, total, keywords):
+        for keyword in keywords:
+            if KeyWord.exists(keyword=keyword['keyword'], is_today=True):
+                today_keyword = KeyWord.get(keyword=keyword['keyword'], is_today=True)
+                if KeyWord.exists(keyword=keyword['keyword'], is_today=False):
+                    yesterday_keyword = KeyWord.get(keyword=keyword['keyword'], is_today=False)
+                    yesterday_keyword.requests = today_keyword.requests
+                    yesterday_keyword.search_1 = today_keyword.search_1
+                    yesterday_keyword.search_2 = today_keyword.search_2
+                    yesterday_keyword.search_3 = today_keyword.search_3
+                    yesterday_keyword.total = today_keyword.total
+                else:
+                    KeyWord(keyword=today_keyword.keyword, requests=today_keyword.requests, search_1=today_keyword.search_1, search_2=today_keyword.search_2, search_3=today_keyword.search_3, total=today_keyword.total, is_today=False)
+                today_keyword.requests = requests
+                today_keyword.search_1 = search_1
+                today_keyword.search_2 = search_2
+                today_keyword.search_3 = search_3
+                today_keyword.total = total
             else:
-                KeyWord(keyword=today_keyword.keyword, requests=today_keyword.requests, search_1=today_keyword.search_1, search_2=today_keyword.search_2, search_3=today_keyword.search_3, total=today_keyword.total, is_today=False)
-            today_keyword.requests = requests
-            today_keyword.search_1 = search_1
-            today_keyword.search_2 = search_2
-            today_keyword.search_3 = search_3
-            today_keyword.total = total
-        else:
-            KeyWord(keyword=keyword, requests=requests, search_1=search_1, search_2=search_2, search_3=search_3, total=total, is_today=True)
+                KeyWord(keyword=keyword['keyword'], requests=keyword['requests'], search_1=keyword['search_1'], search_2=keyword['search_2'], search_3=keyword['search_3'], total=keyword['total'], is_today=True)
+            print(keyword['keyword'])
+
 
     @db_session()
     def create_keywords(self):
