@@ -704,9 +704,8 @@ class DbRequests:
                     today_keyword.total = keyword['total']
                 else:
                     KeyWord(keyword=keyword['keyword'], requests=keyword['requests'], search_1=keyword['search_1'], search_2=keyword['search_2'], search_3=keyword['search_3'], total=keyword['total'], is_today=True)
-            except Exception as e:
-                logging.error(f'Error add to db: {e}')
-
+            except:
+                pass
 
 
     @db_session()

@@ -27,7 +27,7 @@ async def main(start_num):
                     results = await asyncio.gather(*tasks, return_exceptions=True)
                     filtered_results = [result for result in results if isinstance(result, dict)]
                     db_request.create_keyword(keywords=filtered_results)
-                    logging.info(f'Added into db: {(num - 1) * 1000} : {num * 1000}')
+                    logging.info(f'Added into db: {(num - 1) * 1000} : {num * 1000}: {datetime.now()}')
             
             end = datetime.now()
             logging.info(f'Finished batch. Time taken: {end - start}')
@@ -47,7 +47,7 @@ async def get_request(keyword, session, i):
             result = await response.json(content_type='text/plain')
             total = result['data']['total']
     except Exception as e:
-        logging.error(f'Error fetching total: {e}')
+        #logging.error(f'Error fetching total: {e}')
         total = 0
     
     products = []
