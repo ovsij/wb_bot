@@ -315,7 +315,7 @@ class ExportMain(db.Entity):
     abc_percent = Optional(float)
     abc = Optional(str)
 
-db.bind(provider='postgres', user='postgres', password=os.getenv('PG_PASS'), host=os.getenv('PG_HOST'), database='wb_bot')
+db.bind(provider='postgres', user=os.getenv('DBS_USER'), password=os.getenv('DBS_PASSWORD'), host=os.getenv('DBS_HOST'), database=os.getenv('DBS_DATABASE'))
 db.provider.converter_classes.append((Enum, EnumConverter))
 
 db.generate_mapping(create_tables=True)

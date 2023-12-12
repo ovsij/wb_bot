@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
 from datetime import datetime, timedelta, date
@@ -9,77 +10,169 @@ from string import Template
 
 import requests
 
-from database import *
+from .database import *
 
-api = FastAPI()
+api = FastAPI(docs_url=None, redoc_url=None)
 
 def get_difference(article : str, today, yesterday):
-    if all([article not in today.search_1, article not in today.search_2, article not in today.search_3]) \
-          or all([article not in yesterday.search_1, article not in yesterday.search_2, article not in yesterday.search_3]):
-        return ''
-    today_page = 1 if article in today.search_1 else 2 if article in today.search_2 else 3
-    today_index = today.search_1.index(article) + 1 if today_page == 1 else today.search_2.index(article) + 1 if today_page == 2 else today.search_3.index(article) + 1
+    try:
+        if all([
+            article not in today['search_1'],
+            article not in today['search_2'],
+            article not in today['search_3']
+        ]) or all([
+            article not in yesterday['search_1'],
+            article not in yesterday['search_2'],
+            article not in yesterday['search_3']
+        ]):
+            return ''
 
-    yesterday_page = 1 if article in yesterday.search_1 else 2 if article in yesterday.search_2 else 3
-    yesterday_index = yesterday.search_1.index(article) + 1 if yesterday_page == 1 else yesterday.search_2.index(article) + 1 if yesterday_page == 2 else yesterday.search_3.index(article) + 1
+        today_page = 1 if article in today['search_1'] else 2 if article in today['search_2'] else 3
+        today_index = (
+            today['search_1'].index(article) + 1
+            if today_page == 1 else
+            today['search_2'].index(article) + 1
+            if today_page == 2 else
+            today['search_3'].index(article) + 1
+        )
 
-    if today_page == yesterday_page:
-        diff = yesterday_index - today_index
-    if today_page == 1 and yesterday_page == 2:
-        diff = yesterday_index + (100 - today_index)
-    if today_page == 1 and yesterday_page == 3:
-        diff = yesterday_page + 100 + (100 - today_index)
-    if today_page == 2 and yesterday_page == 1:
-        diff == -(today_index + (100 - today_index))
-    if today_page == 3 and yesterday_page == 1:
-        diff == -(today_index + 100 + (100 - today_index))
-    if today_page == 2 and yesterday_page == 3:
-        diff = -(today_index + (100 - today_index))
-    if today_page == 3 and yesterday_page == 2:
-        diff = yesterday_index + (100 - today_index)
+        yesterday_page = 1 if article in yesterday['search_1'] else 2 if article in yesterday['search_2'] else 3
+        yesterday_index = (
+            yesterday['search_1'].index(article) + 1
+            if yesterday_page == 1 else
+            yesterday['search_2'].index(article) + 1
+            if yesterday_page == 2 else
+            yesterday['search_3'].index(article) + 1
+        )
 
-    if diff > 0:
-        return f'⬆ +{diff}'
-    elif diff < 0:
-        return f'⬇ {diff}'
-    else:
-        return ''
+        if today_page == yesterday_page:
+            diff = yesterday_index - today_index
+        elif today_page == 1 and yesterday_page == 2:
+            diff = yesterday_index + (100 - today_index)
+        elif today_page == 1 and yesterday_page == 3:
+            diff = yesterday_index + 100 + (100 - today_index)
+        elif today_page == 2 and yesterday_page == 1:
+            diff = -(today_index + (100 - yesterday_index))
+        elif today_page == 3 and yesterday_page == 1:
+            diff = -(today_index + 100 + (100 - yesterday_index))
+        elif today_page == 2 and yesterday_page == 3:
+            diff = -(today_index + (100 - yesterday_index))
+        elif today_page == 3 and yesterday_page == 2:
+            diff = yesterday_index + (100 - today_index)
+        else:
+            diff = 0
+
+        if diff > 0:
+            return f'⬆ +{diff}'
+        elif diff < 0:
+            return f'⬇ {diff}'
+        else:
+            return '0'
+    except:
+        return '0'
+
+def get_dct(keywords_entities, is_today):
+    dct = {}
+    for k in keywords_entities:
+        if k.is_today == is_today:
+            dct[k.keyword] = k
+    return dct
 
 @db_session()
-def get_keyword(keyword, is_today):
-    return KeyWord.get(keyword=keyword, is_today=is_today)
+def get_keyword(article, request):
+    #query = select((k.keyword) for k in KeyWord if k.keyword == keyword and k.is_today == is_today)[:]
+    #eturn [{'keyword': q[0]} for q in query]
+    #return KeyWord.get(keyword=keyword, is_today=is_today)
+    result = []
+    start = datetime.now()
+    keyword_lst = [list(row.keys())[0] for row in request]
+    keywords_entities = select(k for k in KeyWord if k.keyword in keyword_lst)[:]
+    today = get_dct(keywords_entities, True)
+    yesterday = get_dct(keywords_entities, False)
+    #[k for k in keywords_entities if k.is_today]
+    #yesterday = [{k.keyword: {'keyword': k.keyword, 'search_1': k.search_1, 'search_2': k.search_2, 'search_3': k.search_3}} for k in keywords_entities if not k.is_today]
+    for kw_entity in list(today.values()):
+        dct = {}
+        dct['article'] = article
+        dct['keyword'] = kw_entity.keyword
+        dct['page'] = 1 if int(article) in kw_entity.search_1 else 2 if int(article) in kw_entity.search_2 else 3 if int(article) in kw_entity.search_3 else 4
+        
+        page_list = kw_entity.search_1 if dct['page'] == 1 else kw_entity.search_2 if dct['page'] == 2 else kw_entity.search_3
+        dct['position'] = page_list.index(int(article)) + 1
+        dct['chastota'] = kw_entity.requests
+        dct['concurencia'] = kw_entity.total
+        try:
+            dct['difference'] = get_difference(article, today[kw_entity.keyword], yesterday[kw_entity.keyword])
+        except:
+            dct['difference'] = '0'
+        result.append(dct)
 
-def create_page(requests, article):
+    end = datetime.now()
+    print(f'time: {end-start}')
+    """for row in request:
+        dct = {}
+        today = KeyWord.get(keyword=list(row.keys())[0], is_today=True)
+        yesterday = KeyWord.get(keyword=list(row.keys())[0], is_today=False)
+        dct['article'] = article
+        dct['keyword'] = list(row.keys())[0]
+        dct['page'] = list(row.values())[0][0]
+        dct['position'] = list(row.values())[0][1]
+        dct['chastota'] = list(row.values())[0][2]
+        dct['concurencia'] = list(row.values())[0][3]
+        dct['difference'] = get_difference(article, today, yesterday)
+        result.append(dct)
+    print(result)"""
+    return result
+
+async def create_row(row):
+    keyword = row['keyword']
+    page = row['page']
+    position = row['position']
+
+    
+    #today_keyword = await get_keyword(keyword=keyword, is_today=True)
+    #yesterday_keyword = await get_keyword(keyword=keyword, is_today=False)
+    
+    difference = row['difference']
+
+    chastota = row['chastota']
+    concurencia = row['concurencia']
+    page_url = f"https://www.wildberries.ru/catalog/0/search.aspx?page={list(row.values())[0][0]}&sort=popular&search={list(row.keys())[0].replace(' ', '+')}"
+    return f'<tr><td width="600">{keyword}</td><td><a href="{page_url}">{page}-{position}</a></td><td>{difference}</td><td>{chastota}</td><td>{concurencia}</td></tr>'
+
+
+    
+
+@api.get('/search/{article}', response_class=HTMLResponse)
+async def search(article : str):
+    keywords = get_keywords(article=article, is_today=True)
+    requests = []
+    for keyword in keywords:
+        page_id = 1 if int(article) in keyword.search_1 else 2 if int(article) in keyword.search_2 else 3
+        page_list = keyword.search_1 if page_id == 1 else keyword.search_2 if page_id == 2 else keyword.search_3
+        index = page_list.index(int(article)) + 1
+        requests.append({keyword.keyword: [page_id, index, keyword.requests, keyword.total]})
 
     with open('./template.html', 'r') as file:
         html_content = file.read()
-
     url = f'https://www.wildberries.ru/catalog/{article}/detail.aspx'
-    rows = ""
+    """tasks = []
     for row in requests:
-        keyword = list(row.keys())[0]
-        page = list(row.values())[0][0]
-        position = list(row.values())[0][1]
-
-        today_keyword = get_keyword(keyword=keyword, is_today=True)
-        yesterday_keyword = get_keyword(keyword=keyword, is_today=False)
-        if yesterday_keyword:
-            try:
-                difference = get_difference(article=int(article), today=today_keyword, yesterday=yesterday_keyword)
-            except:
-                difference = ''
-        else:
-            difference = ''
-        print(f'diff {difference}')
-
-        chastota = list(row.values())[0][2]
-        concurencia = list(row.values())[0][3]
-        page_url = f"https://www.wildberries.ru/catalog/0/search.aspx?page={list(row.values())[0][0]}&sort=popular&search={list(row.keys())[0].replace(' ', '+')}"
-        rows += f'<tr><td width="600">{keyword}</td><td><a href="{page_url}">{page}-{position}</a></td><td>{difference}</td><td>{chastota}</td><td>{concurencia}</td></tr>'
+        tasks.append(create_row(row, article))
+    
+    results = await asyncio.gather(*tasks)"""
+    # start = datetime.now()
+    requests_t_y = get_keyword(article, requests)
+    # print(requests_t_y)
+    # end = datetime.now()
+    # print(f'time: {end-start}')
+    rows = ""
+    for row in requests_t_y:
+        rows += await create_row(row)
+    
     html_content = Template(html_content).substitute(url=url, article=article, rows=rows)
-    return html_content
-    #with open('test.html', 'w') as file:
-    #    file.write(html_content)
+    return HTMLResponse(content=html_content)
+    
 
 @db_session()
 def get_keywords(article=None, is_today=None):
@@ -262,18 +355,7 @@ def get_employee(user_id):
     return select(u for u in User_Seller if u.seller.is_active and u.user.id == user_id)[:]
 
 
-@api.get('/search/{article}', response_class=HTMLResponse)
-def search(article : str):
-    print('pp')
-    keywords = get_keywords(article=article, is_today=True)
-    search_results = []
-    for keyword in keywords:
-        page_id = 1 if int(article) in keyword.search_1 else 2 if int(article) in keyword.search_2 else 3
-        page_list = keyword.search_1 if page_id == 1 else keyword.search_2 if page_id == 2 else keyword.search_3
-        index = page_list.index(int(article)) + 1
-        search_results.append({keyword.keyword: [page_id, index, keyword.requests, keyword.total]})
-    
-    return create_page(requests=search_results, article=article)
+
 
 BOT_VERSION = 'WbConviergeBot v.0.1'
 
