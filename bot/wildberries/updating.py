@@ -609,10 +609,10 @@ async def update_seller(seller, tariff : bool = None):
 
     sending = True if not tariff else False
 
-    # try:
-    #     await update_stocks(db_request, seller)
-    # except Exception as ex:
-    #     logging.warning(f'{seller} stock ex - {ex}')
+    try:
+        await update_stocks(db_request, seller)
+    except Exception as ex:
+        logging.warning(f'{seller} stock ex - {ex}')
 
 
     try:

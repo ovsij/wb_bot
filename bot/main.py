@@ -23,13 +23,13 @@ config: Config = load_config('.env')
 #bot = Bot(token=config.bot.token, parse_mode='HTML', disable_web_page_preview=True)
 
 async def on_startup(dispatcher: Dispatcher):
-    config: Config = dispatcher.workflow_data["config"]
+    bot: Bot = dispatcher.workflow_data["bot"]
     
     dispatcher.update.middleware.register(DbSessionMiddleware())
 
     from bot import routers
 
-    routers.register_all_routes(dispatcher, config)
+    routers.register_all_routes(dispatcher, bot)
 
     #asyncio.create_task(update_sellers())
     asyncio.create_task(regular_payment())
