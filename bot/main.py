@@ -23,7 +23,7 @@ config: Config = load_config('.env')
 #bot = Bot(token=config.bot.token, parse_mode='HTML', disable_web_page_preview=True)
 
 async def on_startup(dispatcher: Dispatcher):
-    bot: Bot = dispatcher.workflow_data["bot"]
+    config = dispatcher.workflow_data["config"]
     
     dispatcher.update.middleware.register(DbSessionMiddleware())
 
